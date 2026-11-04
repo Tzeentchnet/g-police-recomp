@@ -30,7 +30,7 @@ No finding below has been filed yet.
 | U-002 | High | Confirmed | CMake/setup host | The zero-BIOS setup-host decision occurs after the file-scope BIOS fatal check |
 | U-003 | Medium | Design question | Dependency contract | PSXRecomp and recomp-ui API compatibility is not expressed as a version/pin constraint |
 | U-004 | Medium | Confirmed | Windows resources | GCC 16 WinLibs injects `default-manifest.o` beside the framework manifest |
-| U-005 | Low | Needs minimization | Function discovery | G-Police generation reports seven out-of-function branch/jump warnings |
+| U-005 | Low | Confirmed | Function discovery | Explicit split transfers still emit dead fallthrough calls and warnings |
 | U-006 | Low | Title-specific | Overlay discovery | `FRONT.BIN` and `GAME.BIN` need a verified same-address title profile |
 | U-007 | Medium | Confirmed | Setup packaging | The staged-source audit treats `if(NOT EXISTS ...)` probes as required files |
 
@@ -199,23 +199,61 @@ The title manifest explicitly carries both `activeCodePage=UTF-8` and
 
 ## U-005: Out-of-function transfer warnings
 
-**Status:** Needs minimization
+**Status:** Confirmed
+**Reproducer:**
+[synthetic PS-X EXE fixture](../tests/fixtures/out_of_function_warning_fixture.py)
 
 The resident executable generation completed with 1,438 emitted function
-bodies but reported seven branch/jump targets outside their current discovered
-functions. Generation remained successful.
+bodies and seven warnings. Instruction-level review found five valid
+continuations and two unreachable data regions. It found no missing callable
+entry, jump table, or unsupported transfer.
 
-Before filing, preserve the exact warning addresses and classify each transfer
-as one of:
+| Warning owner | Warning block | Terminator | Destination(s) | Parent range | Classification |
+| --- | --- | --- | --- | --- | --- |
+| `func_80030008` | `0x80030014` | `j` at `0x80030018` | `0x8805CD40` | `0x80030008-0x80030020` | Data after a terminal B0(38h) BIOS thunk |
+| `func_80041FF8` | `0x80042064` | `j` at `0x80042064` | `0x8004207C` | `0x80041DE8-0x80042134` | Shared continuation |
+| `func_800420A8` | `0x800420A8` | `bne` at `0x800420B8` | `0x80041F3C` / `0x800420C0` | `0x80041DE8-0x80042134` | Shared loop continuation |
+| `func_80043068` | `0x800430D8` | `bne` at `0x800430E0` | `0x80043058` / `0x800430E8` | `0x80042FD0-0x800431B8` | Shared loop continuation across false interior partitions |
+| `func_8004A9E4` | `0x8004A9E4` | `j` at `0x8004A9E4` | `0x8825CD40` | `0x8004A9E4-0x8004A9EC` | Unreachable data between functions |
+| `func_8006A3A0` | `0x8006A3A0` | `beq` at `0x8006A3A8` | `0x8006A3D0` / `0x8006A3B0` | `0x8006A3A0-0x8006A3D8` | Shared early-exit continuation |
+| `func_8006A3B4` | `0x8006A3C0` | `bne` at `0x8006A3C8` | `0x8006A3B0` / `0x8006A3D0` | `0x8006A3A0-0x8006A3D8` | Shared loop continuation |
 
-- a missed function boundary;
-- a valid shared tail or continuation;
-- a jump-table case;
-- data decoded as code;
-- an unsupported control-flow pattern.
+The emitter already writes a terminating CPS transfer for every branch outcome
+and for the jumps. Its final function-body pass then sees no in-piece
+successors and prints the warning. For a reachable continuation it appends a
+next-function call after the generated `return`, making the call unreachable.
+For an unreachable data block it prints `emitting fallthrough` before the
+reachability check, but emits no fallthrough call. The same diagnostic
+therefore describes two different outcomes.
 
-This should not be filed from the warning count alone. A useful report needs a
-small executable slice or reproducible analyzer fixture that is safe to share.
+The fixture contains only synthetic instructions. It reproduces both warning
+shapes, verifies the explicit transfers and dead continuation fallback, and
+proves that the data warning claims a fallback that is not emitted:
+
+```powershell
+python tests\fixtures\out_of_function_warning_fixture.py --emitter psxrecomp\recompiler\build\psxrecomp-game.exe
+```
+
+### Local action
+
+The false interior seeds `0x80042FFC` and `0x80043068` were removed. The first
+is in the register-save prologue begun at `0x80042FD0`; the second begins with
+a conditional branch whose operands were loaded by the preceding block. A
+scratch regeneration still produced 1,438 functions, 33 shards, the same
+dispatch output, and the same seven warnings because automatic discovery
+reconstructs the interior pieces.
+
+No warning address was promoted to a new seed.
+
+### Proposed upstream shape
+
+1. Track whether branch/jump emission already terminates every path.
+2. Do not append or report next-function fallthrough after such a terminator.
+3. Print an emission claim only after the reachability decision.
+4. Keep a diagnostic for a genuinely unterminated reachable block.
+5. Stop a JAL-discovered packed BIOS thunk at its recognized indirect jump,
+   rather than interpreting unreachable bytes up to the next function.
+6. Add the synthetic branch and BIOS-tail cases as regression fixtures.
 
 ## U-006: Same-address title modules
 

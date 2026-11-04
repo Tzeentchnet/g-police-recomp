@@ -32,6 +32,7 @@ The exact framework and launcher revisions are recorded in
 | Required BIOS identity | Pass | 524,288-byte SCPH5552-compatible dump matched the configured SHA-256 |
 | BIOS generation | Pass | SCPH5552 backend generated through the title adapter |
 | Resident game generation | Pass | 33 C shards generated; 1,438 emitted function bodies |
+| Resident transfer warning audit | Pass | Seven warnings classified as five shared continuations and two unreachable data regions; no callable seed missing |
 | Clean setup-host configure/build | Pass | Configures without pre-existing generated game or BIOS code |
 | Clean full-runtime configure/build | Pass | Generated game dispatch and SCPH5552 backend required |
 | Windows PE resources | Pass | Setup and full builds contain one UTF-8/long-path ID-1 manifest and the application icon |

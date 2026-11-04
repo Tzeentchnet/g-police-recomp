@@ -106,3 +106,22 @@ Both setup-host and generated full-runtime links complete without the resource
 merge diagnostic. Each resulting PE contains one ID-1/en-US manifest with
 UTF-8, long-path, supported-OS, and `asInvoker` declarations, plus six icon
 images and one icon-group resource.
+
+### 2026-11-04 - Resident transfer warnings classified
+
+Captured all seven resident-code generation warnings in an isolated output
+tree and traced each warning block to its actual MIPS terminator, destination,
+and unsplit parent routine. Five are valid shared continuations across emitted
+function pieces. Two decode unreachable words after a terminal BIOS thunk or
+between real functions. No warning identifies a missing callable entry, jump
+table, or unsupported instruction.
+
+Removed the proven interior seeds `0x80042FFC` and `0x80043068`. Regeneration
+with 874 seeds still produced 1,438 functions, 33 shards, and byte-identical
+dispatch output; automatic discovery recreates the needed continuation pieces.
+
+Added a retail-free synthetic PS-X EXE reproducer for both warning shapes. It
+also verifies the underlying generic issue: the emitter already generates
+terminating CPS transfers. A reachable continuation then receives an
+unreachable next-function call, while an unreachable data block reports
+`emitting fallthrough` without actually emitting that call.

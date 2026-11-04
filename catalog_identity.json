@@ -74,7 +74,7 @@
     "stack_base": "0x801FFFF0"
   },
   "seeds": {
-    "count": 876,
+    "count": 874,
     "source": "boot_exe_jal"
   },
   "warnings": [
@@ -83,6 +83,7 @@
   "notes": [
     "entry_pc/load_address/text_size/stack_base taken from PS-X EXE header.",
     "seeds are first-pass boot-EXE JAL targets (+ entry); expect to grow as overlays / runtime paths are discovered.",
+    "0x80042FFC and 0x80043068 were removed after instruction-level analysis proved both are interior to the 0x80042FD0-0x800431B8 function.",
     "required_disc_fp is psxrecomp-toc-v1 (matches runtime DiscIdentity)."
   ]
 }

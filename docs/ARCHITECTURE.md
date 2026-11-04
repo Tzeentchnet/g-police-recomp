@@ -121,10 +121,32 @@ The 16-byte difference between the configured stack top and `SYSTEM.CNF` is
 the expected alignment below the top of 2 MiB RAM, not evidence of another RAM
 region.
 
-The initial seed file contains 876 addresses. Current generation expands that
+The curated seed file contains 874 addresses. Current generation expands that
 to 1,438 emitted function bodies across 33 C shards. The dispatch table also
 contains exact continuation and internal-entry rows, so its row count is much
 larger than the function count.
+
+### Resident control-flow partitions
+
+The seven generation warnings are now classified. Five are transfers between
+pieces of three larger routines:
+
+- `0x80041DE8-0x80042134`, including a jump over a fallback initialization
+  block and a loop back to `0x80041F3C`;
+- `0x80042FD0-0x800431B8`, a 176-byte-stack routine whose save sequence
+  continues through `0x80042FFC` and whose loop crosses `0x80043058`,
+  `0x80043068`, and `0x800430E8`; and
+- `0x8006A3A0-0x8006A3D8`, a linked-structure search with an early exit and a
+  back edge.
+
+The other two warnings decode unreachable words as jumps: one follows the
+terminal B0(38h) BIOS thunk at `0x80030008`, and one occupies the eight-byte
+gap at `0x8004A9E4-0x8004A9EC`. Neither target lies in the resident image.
+
+There are no warning-backed callable entries to add. In particular,
+`0x80042FFC` and `0x80043068` are interior addresses, so they were removed from
+the seed file. Automatic split discovery still emits the required continuation
+entries and preserves the existing dispatch output.
 
 ### Embedded source provenance
 

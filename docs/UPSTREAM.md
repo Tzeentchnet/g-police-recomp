@@ -32,6 +32,7 @@ No finding below has been filed yet.
 | U-004 | Medium | Needs minimization | Windows resources | MinGW emits a duplicate non-default manifest merge diagnostic |
 | U-005 | Low | Needs minimization | Function discovery | G-Police generation reports seven out-of-function branch/jump warnings |
 | U-006 | Low | Title-specific | Overlay discovery | `FRONT.BIN` and `GAME.BIN` need a verified same-address title profile |
+| U-007 | Medium | Confirmed | Setup packaging | The staged-source audit treats `if(NOT EXISTS ...)` probes as required files |
 
 ## U-001: Profile-driven retail BIOS generation
 
@@ -210,6 +211,34 @@ loader checks, and static roots.
 
 Keep this title-local unless implementing the profile exposes a generic
 framework limitation.
+
+## U-007: Negative existence checks in setup-package audit
+
+**Status:** Confirmed
+**Local workaround:** The generated dispatch path is assembled from
+`GPOLICE_GENERATED_STEM` in [the title CMake file](../CMakeLists.txt).
+
+### Observation
+
+The setup-host packager checks every literal
+`${CMAKE_CURRENT_SOURCE_DIR}/...` reference and rejects paths absent from the
+staged tree. It recognizes paths inside `if(EXISTS ...)` as optional, but not
+paths inside `if(NOT EXISTS ...)`.
+
+The title uses a negative existence probe to enable the clean setup-host path
+when its generated dispatch file is absent. Generated game code must not be
+shipped in the owned-input setup package, so the packager removes it and then
+incorrectly reports the probe target as a missing source dependency.
+
+### Proposed upstream shape
+
+- Treat literal paths used by both positive and negative `EXISTS` predicates as
+  optional probes; or
+- explicitly exclude configured generated-output markers from the staged
+  source-input audit.
+
+A regression fixture should prove that a missing path used only by
+`if(NOT EXISTS ...)` passes while an unguarded missing source still fails.
 
 ## Filing checklist
 

@@ -109,7 +109,11 @@ def audit_archive(path: Path, repo: str, expected: dict[str, str]) -> dict[str, 
                     allowed_private.append(name)
                 else:
                     private_paths.append(name)
-            if lower.endswith("/manifest.toml") and "/mods/packages/" in f"/{lower}":
+            catalog_name = f"/{lower}"
+            if lower.endswith("/manifest.toml") and any(
+                marker in catalog_name
+                for marker in ("/mods/packages/", "/mods/bundled/")
+            ):
                 mod_manifests += 1
                 if re.search(rb'^\s*channel\s*=\s*"developer"', data, re.M):
                     problems.append(f"developer-channel mod: {name}")

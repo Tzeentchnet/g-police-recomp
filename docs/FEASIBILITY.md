@@ -44,7 +44,7 @@ The exact framework and launcher revisions are recorded in
 | Save/load and memory card | Not run | Runtime path exists; title behavior is unverified |
 | Disc change | Not run | Both discs start independently; in-game swap flow is unverified |
 | Overlay native coverage | Partial | Cache enabled; `FRONT.BIN` and `GAME.BIN` discovered, not yet shipped as audited native shards |
-| Setup ZIP acceptance | Not run | Source and setup host build; final archive workflow still needs acceptance |
+| Setup ZIP acceptance | Pass | Windows `0.1.1` archive passed payload, platform-copy, native-emitter, and clean extracted-source rebuild checks |
 | Linux gameplay | Not run | No current native title acceptance |
 | macOS gameplay | Not run | No current native title acceptance |
 
@@ -80,8 +80,10 @@ dumps, subchannel data, or multi-track releases.
 
 The inherited setup-host model generates retail-derived code on the user's
 machine and keeps it ignored. Current PSXRecomp release guidance favors bundled
-generated outputs for some projects. This project has not yet selected a final
-distribution model.
+generated outputs for some projects. The Windows owned-input setup ZIP now
+passes the local package gates and rebuilds its setup host from the extracted
+archive, but this project has not yet selected a final public distribution
+model.
 
 ### Toolchain diagnostics
 

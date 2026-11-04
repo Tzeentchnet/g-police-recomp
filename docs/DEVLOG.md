@@ -75,3 +75,20 @@ Public PC-version prior art in
 [apemax/GPModTools](https://github.com/apemax/GPModTools) was reviewed and is
 credited in the format notes. Its GPL-3.0 implementation and PC-specific
 `RDI`/`RDX` assumptions are not copied into this project.
+
+### 2026-11-04 - Windows setup-package acceptance
+
+Accepted a local `0.1.1` Windows owned-input setup package against the frozen
+source and framework identities. The package excludes retail BIOS bytes,
+OpenBIOS, generated game code, player state, framework test fixtures, and
+local overlay-toolchain state while retaining the current bundled mod catalog.
+
+The 31,214,833-byte archive passed the payload and platform-copy audits. Both
+packaged recompiler emitters passed native `--help` smoke tests from a fresh
+path containing spaces. Extracting the archive into a new source tree,
+configuring with no generated game or BIOS backend, and rebuilding
+`G_Police_Recompiled.exe` also passed with version stamp `0.1.1`.
+
+The existing MinGW `.rsrc merge failure: multiple non-default manifests`
+diagnostic reproduced during the clean archive rebuild and remains tracked as
+a separate release blocker.

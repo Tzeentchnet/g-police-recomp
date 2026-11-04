@@ -76,7 +76,7 @@ for _sym in psx_symbols.h psx_symbols_overlays.h; do
 done
 
 cd "${ROOT}"
-exec bash "${PACKAGER}" \
+bash "${PACKAGER}" \
   --root "${ROOT}" \
   --build-dir "${BUILD_DIR}" \
   --artifact "${ARTIFACT_TAG}" \
@@ -88,6 +88,7 @@ exec bash "${PACKAGER}" \
   --runtime-dir mods \
   --disc-hint "G-Police (USA) (Disc 1).cue" \
   --bios-hint "SCPH-5502/5552 Europe BIOS (524288 bytes; SHA-256 1faaa18fa820a0225e488d9f086296b8e6c46df739666093987ff7d8fd352c09)" \
+  --omit-openbios \
   --project-file disc_identity.json \
   --project-file CMakeLists.txt \
   --project-file project-manifest.toml \
@@ -100,3 +101,26 @@ exec bash "${PACKAGER}" \
   --project-dir docs \
   --project-dir seeds \
   "${EXTRA_PROJECT[@]}"
+
+PACKAGE_VERSION="$(tr -d '[:space:]' <"${ROOT}/VERSION")"
+PACKAGE_ZIP="${ROOT}/dist/g-police-${PACKAGE_VERSION}-${ARTIFACT_TAG}.zip"
+SANITIZER="${ROOT}/.release/sanitize_setup_package.py"
+if [[ ! -f "${SANITIZER}" ]]; then
+  echo "error: missing ${SANITIZER}" >&2
+  exit 1
+fi
+
+PYTHON=""
+for candidate in python3 python; do
+  if command -v "${candidate}" >/dev/null 2>&1 \
+     && "${candidate}" -c 'import sys; raise SystemExit(sys.version_info < (3, 8))' >/dev/null 2>&1; then
+    PYTHON="${candidate}"
+    break
+  fi
+done
+if [[ -z "${PYTHON}" ]]; then
+  echo "error: Python 3.8 or newer is required to sanitize the setup package" >&2
+  exit 1
+fi
+
+"${PYTHON}" "${SANITIZER}" "${PACKAGE_ZIP}"

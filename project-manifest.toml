@@ -22,6 +22,6 @@ size = 524288
 sha256 = "1faaa18fa820a0225e488d9f086296b8e6c46df739666093987ff7d8fd352c09"
 
 [validation]
-windows_package = "not_run"
+windows_package = "pass"
 linux_gameplay = "not_run"
 macos_gameplay = "not_run"

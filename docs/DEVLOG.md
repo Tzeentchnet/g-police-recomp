@@ -1,9 +1,77 @@
-# Release preparation
+# Development log
 
-2026-09-06: Prepared a portable setup recipe from accepted framework `00a8ae0051e85c7d07ceb6c0a7bea9a315f8c476`.
-The release snapshot keeps functional code and title seed bytes, adds the bounded setup backport, and excludes private input/history.
-Consulted the local release process, PSX-PUB-016, the accepted title handoff, and [Git orphan-branch documentation](https://git-scm.com/docs/git-checkout).
-The shared archive gate now accepts only exact hashes for two intentional SDK path-example files; changed and relocated fixtures still fail.
-Native CI and Windows package acceptance are pending.
+This log preserves useful history from the standalone setup candidate while
+separating it from the current, substantially expanded project.
 
-2026-09-07: Native canary gates required the existing PSX-BUILD-024 C-linkage correction and the exact public recomp-ui be8ac1d portable tool text fix. The package now carries all four complete public dependency identities (PSX-PUB-027). No game runtime behavior or recipe settings changed in this update. Native build and package checks remain required.
+## Inherited project-basis history
+
+### 2026-09-06 - Portable setup recipe
+
+The upstream project basis prepared a portable owned-input setup recipe from
+framework `00a8ae0051e85c7d07ceb6c0a7bea9a315f8c476`. The snapshot retained
+title configuration and seed addresses, added the bounded setup path, and
+excluded private retail inputs and generated outputs. Native CI and Windows
+package acceptance remained pending.
+
+### 2026-09-07 - Native canary and dependency provenance
+
+The setup candidate incorporated the existing C-linkage correction and pinned
+recomp-ui portable-tool wording fix. It recorded complete identities for the
+framework, launcher, recomp-net, and rbengine dependencies. This changed build
+and package provenance rather than guest runtime behavior.
+
+## Current project history
+
+### 2026-11-04 - Rebase onto maintained PSXRecomp
+
+Rebased from the setup candidate's PSXRecomp pin `bca3aa8` to maintained
+PSXRecomp `060ef0ab` (`v0.3.4-alpha-28-g060ef0ab`). Canonical submodule URLs
+now point to the RetroPortingToolKit repositories. Nested framework pins were
+updated, and recomp-ui advanced to compatible revision `dd47b18`.
+
+Enabled the current overlay-cache path and added a title-level configure guard
+so the first-run setup host can exist before local BIOS and game generation.
+A title-owned CLI adapter now honors the configured SCPH5552 BIOS profile while
+delegating disc preparation and code emission to the pinned upstream CLI.
+
+Both supplied USA disc images were re-probed and matched the committed sizes,
+hashes, serials, executable identity, and fingerprints. The current emitters
+generated the SCPH5552 backend and 33 resident game-code shards. Clean Windows
+setup-host and full-runtime builds passed, followed by self-checks and bounded
+headless starts with Disc 1 (`SLUS-00544`) and Disc 2 (`SLUS-00556`).
+
+### 2026-11-04 - Architecture and format baseline
+
+Reframed the repository as an active development project rather than a static
+release candidate. Added living documentation for architecture, game formats,
+validation, and findings suitable for upstream PSXRecomp work.
+
+An ISO9660 inventory found 110 files on Disc 1 and 111 on Disc 2. Both discs
+carry byte-identical resident executables, `FRONT.BIN`, `GAME.BIN`, `RES.RDR`,
+`RES.RDA`, and `RES.RDT`; their movie sets and mission-briefing XA lengths
+differ.
+
+PSXRecomp's play-free generic overlay detector recovered `FRONT.BIN` and
+`GAME.BIN` at the same inferred file base, `0x80098B60`, confirming that the
+front-end and gameplay modules occupy a mutually exclusive RAM region. The
+detector found 203 candidate function entries in `FRONT.BIN` and 502 in
+`GAME.BIN`. These are discovery results, not yet an audited AOT overlay
+profile.
+
+The resource graph was parsed structurally without extracting retail assets:
+
+- `RES.RDR` selects one archive, `RES.RDT`.
+- `RES.RDA` is an exact `RDA2` array with 8,688 entries.
+- Tagged references resolve to 144,800 valid records across 19 observed type
+  IDs with no bounds or self-reference failures.
+- Type 1 records are nested `RDA2` directories.
+- Type 15 records are standard `VAGp` samples.
+- Type 25 records contain indexed texture planes.
+- Type 27 records contain RGB24 palettes.
+- Type 29 records are fixed-size texture descriptors whose dimensions match
+  the texture families.
+
+Public PC-version prior art in
+[apemax/GPModTools](https://github.com/apemax/GPModTools) was reviewed and is
+credited in the format notes. Its GPL-3.0 implementation and PC-specific
+`RDI`/`RDX` assumptions are not copied into this project.

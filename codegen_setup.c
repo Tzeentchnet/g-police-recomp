@@ -10,7 +10,7 @@ static const PsxrecompCodegenHostConfig kCodegenConfig = {
     .project_root_env = "G_POLICE_PROJECT_ROOT",
     .build_dir_env = "G_POLICE_BUILD_DIR",
     .force_setup_env = "G_POLICE_FORCE_SETUP",
-    .psxrecomp_cli_relpath = "psxrecomp/psxrecomp_cli.py",
+    .psxrecomp_cli_relpath = "scripts/gpolice_psxrecomp_cli.py",
     .seed_cfg_relpath = "game.toml",
     .game_toml_relpath = "game.toml",
     .gen_marker_relpath = "generated/SLUS_005.44_dispatch.c",
@@ -42,4 +42,3 @@ void psx_game_codegen_relaunch_or_exit(const char* disc_path) {
 void psx_game_codegen_forward_if_built(int argc, char** argv) {
     psxrecomp_codegen_host_forward_if_built(&kCodegenConfig, argc, argv);
 }
-

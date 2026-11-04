@@ -24,6 +24,11 @@ set(PSX_SETUP_WIZARD ON CACHE BOOL "First-run setup" FORCE)
 set(PSXRECOMP_BIOS_STEMS "SCPH5552" CACHE STRING "Accepted BIOS" FORCE)
 set(PSXRECOMP_BIOS_STEM "SCPH5552" CACHE STRING "Accepted BIOS" FORCE)
 set(PSXRECOMP_BIOS_PROFILE "${PSXRECOMP_ROOT}/bios/SCPH5552.toml" CACHE FILEPATH "Accepted BIOS" FORCE)
+if(PSXRECOMP_FORCE_SETUP_HOST OR BPE_FORCE_SETUP_HOST
+   OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/SLUS_005.44_dispatch.c")
+    set(PSXRECOMP_ALLOW_NO_BIOS ON CACHE BOOL
+        "Allow first-run setup before BIOS code generation" FORCE)
+endif()
 include("${PSXRECOMP_ROOT}/runtime/runtime.cmake")
 
 psxrecomp_add_game_runtime(psx-runtime

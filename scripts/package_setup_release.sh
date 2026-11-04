@@ -95,6 +95,8 @@ exec bash "${PACKAGER}" \
   --project-file VERSION \
   --project-file codegen_setup.c \
   --project-file codegen_setup.h \
+  --project-file scripts/gpolice_psxrecomp_cli.py \
   --project-file README.md \
+  --project-dir docs \
   --project-dir seeds \
   "${EXTRA_PROJECT[@]}"

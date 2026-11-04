@@ -29,7 +29,7 @@ No finding below has been filed yet.
 | U-001 | High | Confirmed | CLI/codegen | Retail BIOS generation ignores the configured BIOS profile and hard-codes SCPH1001 |
 | U-002 | High | Confirmed | CMake/setup host | The zero-BIOS setup-host decision occurs after the file-scope BIOS fatal check |
 | U-003 | Medium | Design question | Dependency contract | PSXRecomp and recomp-ui API compatibility is not expressed as a version/pin constraint |
-| U-004 | Medium | Needs minimization | Windows resources | MinGW emits a duplicate non-default manifest merge diagnostic |
+| U-004 | Medium | Confirmed | Windows resources | GCC 16 WinLibs injects `default-manifest.o` beside the framework manifest |
 | U-005 | Low | Needs minimization | Function discovery | G-Police generation reports seven out-of-function branch/jump warnings |
 | U-006 | Low | Title-specific | Overlay discovery | `FRONT.BIN` and `GAME.BIN` need a verified same-address title profile |
 | U-007 | Medium | Confirmed | Setup packaging | The staged-source audit treats `if(NOT EXISTS ...)` probes as required files |
@@ -152,7 +152,9 @@ would be a faster, clearer failure for title maintainers.
 
 ## U-004: MinGW manifest merge diagnostic
 
-**Status:** Needs minimization
+**Status:** Confirmed
+**Local workaround:** The title manifest and target-local GNU specs override in
+[the title CMake file](../CMakeLists.txt)
 
 ### Observation
 
@@ -162,22 +164,38 @@ Both setup-host and full-runtime links print:
 .rsrc merge failure: multiple non-default manifests
 ```
 
-The linker returns success. The resulting executable contains a resource
-section, passes self-checks, and starts. The generated Ninja graph shows the
-PSXRecomp manifest object and app-icon object; recomp-ui's guard is intended to
-avoid adding a second manifest when the PSXRecomp object library is present.
+The reproducing toolchain is GCC 16.2.0, GNU ld/windres
+2.47.20260726, CMake 4.4.4, and Ninja 1.13.2. The link contains only the
+PSXRecomp manifest resource object and the title icon object; recomp-ui
+correctly refrains from adding its own manifest.
 
-### Before filing
+GCC's `*endfile` spec adds
+`%{!shared:%:if-exists(default-manifest.o%s)}`. The WinLibs
+`default-manifest.o` supplies a 599-byte ID-1 manifest with
+`longPathAware=true`. PSXRecomp supplies a 2,101-byte ID-1 manifest with the
+UTF-8 active code page, supported-OS declarations, and execution level. GNU ld
+keeps both duplicate type-24/ID-1 entries and emits the diagnostic.
 
-- capture the exact compiler, binutils, CMake, and generator versions;
-- reproduce with a minimal PSXRecomp plus recomp-ui executable;
-- compare with PSXRecomp without recomp-ui;
-- inspect the final RT_MANIFEST resources and UTF-8 code-page declaration;
-- determine whether the competing resource is the toolchain default manifest
-  rather than recomp-ui.
+The local workaround derives a target-local specs fragment from the active
+compiler's own `*endfile` spec and removes only the `default-manifest.o` token.
+The title manifest explicitly carries both `activeCodePage=UTF-8` and
+`longPathAware=true`, preserving the behavior of both original manifests.
 
-A fix should remove the warning without dropping UTF-8 path support or the app
-icon.
+### Proposed upstream shape
+
+- Add long-path awareness to the canonical PSXRecomp Windows manifest.
+- When GNU's `*endfile` spec injects an existing `default-manifest.o`, suppress
+  that one token for targets that already use `psxrecomp_windows_manifest()`.
+- Preserve all other compiler-provided start/end files and leave MSVC and
+  llvm-mingw behavior unchanged.
+
+### Acceptance tests
+
+- The link emits no resource-merge diagnostic.
+- The final PE has exactly one type-24/ID-1 manifest.
+- That manifest declares UTF-8, long-path awareness, the supported OS IDs, and
+  `asInvoker`.
+- The app icon remains present.
 
 ## U-005: Out-of-function transfer warnings
 

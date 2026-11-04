@@ -34,6 +34,7 @@ The exact framework and launcher revisions are recorded in
 | Resident game generation | Pass | 33 C shards generated; 1,438 emitted function bodies |
 | Clean setup-host configure/build | Pass | Configures without pre-existing generated game or BIOS code |
 | Clean full-runtime configure/build | Pass | Generated game dispatch and SCPH5552 backend required |
+| Windows PE resources | Pass | Setup and full builds contain one UTF-8/long-path ID-1 manifest and the application icon |
 | Setup-host self-check | Pass | Setup host reports the expected executable identity and mode |
 | Full-runtime self-check | Pass | Game dispatch, SCPH5552 backend, and overlay-cache configuration present |
 | Disc 1 bounded startup | Pass | Disc identified as `SLUS-00544`; runtime remained active for 15 seconds |
@@ -85,12 +86,18 @@ passes the local package gates and rebuilds its setup host from the extracted
 archive, but this project has not yet selected a final public distribution
 model.
 
-### Toolchain diagnostics
+### Windows toolchain compatibility
 
-MinGW links currently print a non-fatal
-`.rsrc merge failure: multiple non-default manifests` diagnostic. The
-executable links, self-checks, and starts, but the warning needs an isolated
-reproduction before release. It is tracked in [UPSTREAM.md](UPSTREAM.md).
+WinLibs GCC 16.2 injects a long-path `default-manifest.o` even when the target
+already supplies the PSXRecomp UTF-8 manifest. The title now preserves both
+settings in one manifest and removes only that injected end-file token through
+a target-local GNU specs override. Setup-host and full-runtime links are clean,
+and their PE resource trees each contain exactly one type-24/ID-1 manifest.
+
+The override fails configuration if a future GNU toolchain exposes an
+unrecognized end-file spec rather than silently restoring duplicate resources.
+MSVC and llvm-mingw do not use this workaround and still need release-host
+acceptance.
 
 ### Data formats
 

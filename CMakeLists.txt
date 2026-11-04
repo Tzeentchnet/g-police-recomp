@@ -32,6 +32,8 @@ if(PSXRECOMP_FORCE_SETUP_HOST OR BPE_FORCE_SETUP_HOST
         "Allow first-run setup before BIOS code generation" FORCE)
 endif()
 include("${PSXRECOMP_ROOT}/runtime/runtime.cmake")
+set(PSXRECOMP_WINDOWS_MANIFEST
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/gpolice.manifest")
 
 psxrecomp_add_game_runtime(psx-runtime
 
@@ -47,6 +49,70 @@ psxrecomp_add_game_runtime(psx-runtime
     GEN_FULL_GLOB "${GPOLICE_GENERATED_STEM}_full_*.c"
     CODEGEN_SETUP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/codegen_setup.c"
 )
+
+# GCC 16 WinLibs injects default-manifest.o even when the target supplies one.
+if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    execute_process(
+        COMMAND "${CMAKE_CXX_COMPILER}" -print-file-name=default-manifest.o
+        RESULT_VARIABLE _gpolice_manifest_path_result
+        OUTPUT_VARIABLE _gpolice_default_manifest
+        ERROR_VARIABLE _gpolice_manifest_path_error
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _gpolice_manifest_path_result EQUAL 0)
+        message(FATAL_ERROR
+            "Unable to query the GNU default manifest: "
+            "${_gpolice_manifest_path_error}")
+    endif()
+
+    if(EXISTS "${_gpolice_default_manifest}")
+        execute_process(
+            COMMAND "${CMAKE_CXX_COMPILER}" -dumpspecs
+            RESULT_VARIABLE _gpolice_dumpspecs_result
+            OUTPUT_VARIABLE _gpolice_dumpspecs
+            ERROR_VARIABLE _gpolice_dumpspecs_error)
+        if(NOT _gpolice_dumpspecs_result EQUAL 0)
+            message(FATAL_ERROR
+                "Unable to inspect GNU linker specs: "
+                "${_gpolice_dumpspecs_error}")
+        endif()
+
+        string(REPLACE "\r\n" "\n"
+            _gpolice_dumpspecs "${_gpolice_dumpspecs}")
+        string(REGEX MATCH "\\*endfile:\n([^\n]*)"
+            _gpolice_endfile_match "${_gpolice_dumpspecs}")
+        set(_gpolice_endfile_spec "${CMAKE_MATCH_1}")
+        set(_gpolice_default_manifest_spec
+            "%{!shared:%:if-exists(default-manifest.o%s)}")
+        if(NOT _gpolice_endfile_match
+           OR NOT _gpolice_endfile_spec MATCHES "default-manifest\\.o")
+            message(FATAL_ERROR
+                "GNU supplies default-manifest.o through an unrecognized "
+                "endfile spec")
+        endif()
+
+        string(REPLACE "${_gpolice_default_manifest_spec}" ""
+            _gpolice_endfile_spec "${_gpolice_endfile_spec}")
+        set(_gpolice_specs
+            "${CMAKE_CURRENT_BINARY_DIR}/gpolice-no-default-manifest.specs")
+        set(_gpolice_specs_content
+            "%rename endfile gpolice_original_endfile\n\n"
+            "*endfile:\n${_gpolice_endfile_spec}\n")
+        string(CONCAT _gpolice_specs_content ${_gpolice_specs_content})
+        if(EXISTS "${_gpolice_specs}")
+            file(READ "${_gpolice_specs}" _gpolice_old_specs_content)
+        else()
+            set(_gpolice_old_specs_content "")
+        endif()
+        if(NOT _gpolice_old_specs_content STREQUAL _gpolice_specs_content)
+            file(WRITE "${_gpolice_specs}" "${_gpolice_specs_content}")
+        endif()
+        target_link_options(psx-runtime PRIVATE "-specs=${_gpolice_specs}")
+        set_property(TARGET psx-runtime APPEND PROPERTY
+            LINK_DEPENDS "${_gpolice_specs}")
+        message(STATUS
+            "G-Police: GNU default-manifest.o suppressed for psx-runtime")
+    endif()
+endif()
 
 # Stage runtime configs next to the exe for direct build/ launches. Only copy
 # files that exist — never fail POST_BUILD when game_options.toml is absent.

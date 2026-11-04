@@ -92,3 +92,17 @@ configuring with no generated game or BIOS backend, and rebuilding
 The existing MinGW `.rsrc merge failure: multiple non-default manifests`
 diagnostic reproduced during the clean archive rebuild and remains tracked as
 a separate release blocker.
+
+### 2026-11-04 - Windows manifest conflict resolved
+
+Minimized the MinGW resource warning to GCC 16.2's automatic
+`default-manifest.o` end file. It added a 599-byte long-path manifest beside
+PSXRecomp's 2,101-byte UTF-8 manifest, leaving two type-24 resources with the
+same ID and language. The title now supplies one combined manifest and derives
+a target-local GNU specs override that removes only the injected default
+manifest.
+
+Both setup-host and generated full-runtime links complete without the resource
+merge diagnostic. Each resulting PE contains one ID-1/en-US manifest with
+UTF-8, long-path, supported-OS, and `asInvoker` declarations, plus six icon
+images and one icon-group resource.

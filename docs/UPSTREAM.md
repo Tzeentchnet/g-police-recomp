@@ -20,17 +20,17 @@ Baseline reviewed: PSXRecomp
 | Title-specific | Keep local unless evidence shows a reusable framework need |
 | Filed | An upstream issue or pull request exists and should be linked |
 
-No finding below has been filed yet.
+Filed findings are linked from their sections below.
 
 ## Candidate summary
 
 | ID | Priority | Status | Area | Finding |
 | --- | --- | --- | --- | --- |
 | U-001 | High | Confirmed | CLI/codegen | Retail BIOS generation ignores the configured BIOS profile and hard-codes SCPH1001 |
-| U-002 | High | Confirmed | CMake/setup host | The zero-BIOS setup-host decision occurs after the file-scope BIOS fatal check |
+| U-002 | High | Filed | CMake/setup host | The zero-BIOS setup-host decision occurs after the file-scope BIOS fatal check |
 | U-003 | Medium | Design question | Dependency contract | PSXRecomp and recomp-ui API compatibility is not expressed as a version/pin constraint |
-| U-004 | Medium | Confirmed | Windows resources | GCC 16 WinLibs injects `default-manifest.o` beside the framework manifest |
-| U-005 | Low | Confirmed | Function discovery | Explicit split transfers still emit dead fallthrough calls and warnings |
+| U-004 | Medium | Filed | Windows resources | GCC 16 WinLibs injects `default-manifest.o` beside the framework manifest |
+| U-005 | Low | Filed | Function discovery | Explicit split transfers still emit dead fallthrough calls and warnings |
 | U-006 | Low | Title-specific | Overlay discovery | The declarative AOT pipeline handles G-Police's verified same-address modules |
 | U-007 | Medium | Confirmed | Setup packaging | The staged-source audit treats `if(NOT EXISTS ...)` probes as required files |
 | U-008 | Medium | Confirmed | CMake helper | Forwarded runtime keywords are swallowed after high-level multi-value arguments |
@@ -85,7 +85,8 @@ synthetic fixtures in a pull request.
 
 ## U-002: Setup-host BIOS check ordering
 
-**Status:** Confirmed
+**Status:** Filed —
+[RetroPortingToolKit/psxrecomp#813](https://github.com/RetroPortingToolKit/psxrecomp/issues/813)
 **Local workaround:** The pre-include guard in
 [`CMakeLists.txt`](../CMakeLists.txt)
 
@@ -153,7 +154,8 @@ would be a faster, clearer failure for title maintainers.
 
 ## U-004: MinGW manifest merge diagnostic
 
-**Status:** Confirmed
+**Status:** Filed —
+[RetroPortingToolKit/psxrecomp#811](https://github.com/RetroPortingToolKit/psxrecomp/issues/811)
 **Local workaround:** The title manifest and target-local GNU specs override in
 [the title CMake file](../CMakeLists.txt)
 
@@ -200,7 +202,8 @@ The title manifest explicitly carries both `activeCodePage=UTF-8` and
 
 ## U-005: Out-of-function transfer warnings
 
-**Status:** Confirmed
+**Status:** Filed —
+[RetroPortingToolKit/psxrecomp#812](https://github.com/RetroPortingToolKit/psxrecomp/issues/812)
 **Reproducer:**
 [synthetic PS-X EXE fixture](../tests/fixtures/out_of_function_warning_fixture.py)
 

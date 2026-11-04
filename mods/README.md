@@ -15,6 +15,7 @@ memory findings in [the architecture notes](../docs/ARCHITECTURE.md), data
 structures in [the format notes](../docs/FORMATS.md), and reusable framework
 gaps in [the upstream findings](../docs/UPSTREAM.md).
 
-The companion Blender add-on is a separate tooling surface. Import/export
-support should consume documented formats rather than depending on a runtime
-mod or generated recompilation code.
+The companion
+[G-Police Blender](https://github.com/Tzeentchnet/G-Police-Blender) add-on is a
+separate tooling surface. Import/export support should consume documented
+formats rather than depending on a runtime mod or generated recompilation code.

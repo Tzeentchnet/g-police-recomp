@@ -1,9 +1,11 @@
 # Game data formats
 
 This document is the shared format notebook for the recompilation project and
-the companion Blender add-on. It covers the USA PlayStation discs identified
-by [disc_identity.json](../disc_identity.json). PC-version behavior is treated
-as prior art, not assumed to be binary-compatible.
+the companion
+[G-Police Blender](https://github.com/Tzeentchnet/G-Police-Blender) add-on. It
+covers the USA PlayStation discs identified by
+[disc_identity.json](../disc_identity.json). PC-version behavior is treated as
+prior art, not assumed to be binary-compatible.
 
 Last updated: **2026-11-04**
 
@@ -545,10 +547,12 @@ The add-on should have separate layers:
 4. **Blender adapter:** coordinate conversion and datablock creation, with no
    archive parsing hidden in UI operators.
 
-The current companion implementation covers the container layer, the strict
-class-620 mesh variant, Shape/Artic reference traversal, raw XA/STR sector
-export, and XA-to-WAV decoding. Texture pixels, Artic transforms, unsupported
-geometry variants, and STR video frames remain deliberately unimplemented.
+The current implementation in
+[Tzeentchnet/G-Police-Blender](https://github.com/Tzeentchnet/G-Police-Blender)
+covers the container layer, the strict class-620 mesh variant, Shape/Artic
+reference traversal, raw XA/STR sector export, and XA-to-WAV decoding. Texture
+pixels, Artic transforms, unsupported geometry variants, and STR video frames
+remain deliberately unimplemented.
 
 Recommended stable identity for an asset:
 

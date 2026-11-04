@@ -11,7 +11,8 @@ game and BIOS code and
 This is no longer treated as a frozen release-candidate recipe. The current
 work includes framework integration, two-disc runtime support, overlay
 coverage, game architecture research, and asset-format documentation intended
-to support a companion Blender add-on.
+to support the companion
+[G-Police Blender](https://github.com/Tzeentchnet/G-Police-Blender) add-on.
 
 > [!IMPORTANT]
 > The project is in active development. Both discs pass bounded native startup
@@ -52,6 +53,13 @@ changes that are reusable by other titles are tracked separately in
 | [Feasibility and validation](docs/FEASIBILITY.md) | What currently works, what has been tested, and what remains unproven |
 | [Development log](docs/DEVLOG.md) | Chronological project and inherited baseline history |
 | [Title mods](mods/README.md) | Status and policy for G-Police-specific runtime mods |
+
+## Companion tooling
+
+[Tzeentchnet/G-Police-Blender](https://github.com/Tzeentchnet/G-Police-Blender)
+is the companion Blender 5.2 importer for assets and XA audio from owned
+G-Police PlayStation disc images. Format research is shared between the two
+projects, while their runtime and tooling implementations remain independent.
 
 Exact framework revisions are recorded in
 [framework_pins.txt](framework_pins.txt) and

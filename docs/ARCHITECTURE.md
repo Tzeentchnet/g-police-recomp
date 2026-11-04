@@ -204,6 +204,12 @@ active.
 `0x8009DAE8` with `a0 = 0` at `0x80020058`. Its gameplay path calls the game
 loader at `0x8002008C`, then calls `0x800B2A60` at `0x800200A4`.
 
+A 2026-11-04 Disc 1 interactive smoke followed the normal campaign path into a
+live mission and observed guarded native `GAME.BIN` dispatch. This confirms
+that an ordinary gameplay flow reaches the `0x800B2A60` handoff and executes
+the audited static variant; it does not prove complete indirect-entry coverage
+or mission behavior.
+
 `FRONT.BIN` begins with a four-entry pointer table and contains menus, campaign
 text, equipment descriptions, and all known STR movie paths. Its four table
 targets are `0x8009A950`, `0x8009A9D4`, `0x8009A9E8`, and `0x8009AA74`.
@@ -255,9 +261,11 @@ proof that every possible indirect entry has been found, so misses still fall
 back to the dirty-RAM interpreter.
 
 A bounded headless Disc 1 run reached the front handoff once and recorded more
-than ten million guarded static hits in the module address range. The game
-handoff was not reached without menu input; exercising it remains part of the
-interactive acceptance task.
+than ten million guarded static hits in the module address range. The
+2026-11-04 interactive smoke subsequently reached the game handoff and
+recorded sustained guarded static dispatch during live mission rendering and
+control. Neither observation changes the audit's conservative
+`full_static_coverage_proven = false` result.
 
 ## Resource system
 
@@ -351,8 +359,6 @@ BIOS bytes remain ignored and are not release-source inputs.
   dispatch role?
 - Can any front-end path reach stale `GAME.BIN` tail bytes left above
   `0x800CCB6C`, or are all calls constrained to the active module?
-- Which gameplay flow first reaches `0x800B2A60`, and does it execute through
-  the audited static variant during interactive play?
 - How do type-29 texture descriptors associate type-25 image planes and
   type-27 palettes, including transparency and texture-page selection?
 - What distinguishes the 7,568 class-`0x026C` records that do not match the

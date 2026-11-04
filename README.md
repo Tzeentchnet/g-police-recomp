@@ -132,13 +132,18 @@ As of 2026-11-04:
   dispatcher; no retail bytes or generated retail C are tracked.
 - A clean Windows full-runtime configure and build passes.
 - A bounded live probe reached the `FRONT.BIN` handoff through guarded native
-  dispatch. `GAME.BIN` is audited and linked but still needs an interactive
-  gameplay-path check.
+  dispatch. A Disc 1 interactive smoke also reached the `GAME.BIN` handoff
+  through guarded native dispatch.
+- The full launcher verified Disc 1, BIOS, controller, renderer, and empty
+  memory-card configuration, then handed Play to the OpenGL runtime.
+- Normal controller input covered the title menus, training briefing and live
+  flight, plus campaign FMV, briefing, loadout, and live mission entry.
 - Disc 1 (`SLUS-00544`) and Disc 2 (`SLUS-00556`) each pass a bounded headless
   startup check.
 
-These are engineering checks, not a claim of complete gameplay compatibility.
-See [docs/FEASIBILITY.md](docs/FEASIBILITY.md) for the full validation matrix.
+These are engineering checks, not a mission-completion, save/load, or complete
+gameplay-compatibility claim. See
+[docs/FEASIBILITY.md](docs/FEASIBILITY.md) for the full validation matrix.
 
 ## Repository layout
 

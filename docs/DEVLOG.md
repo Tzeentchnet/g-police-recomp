@@ -22,6 +22,30 @@ and package provenance rather than guest runtime behavior.
 
 ## Current project history
 
+### 2026-11-04 - Disc 1 interactive acceptance smoke
+
+Ran the AOT-enabled full runtime with the verified Disc 1 and SCPH5552 inputs.
+The full launcher displayed the verified disc identity, BIOS and OpenGL
+settings, complete keyboard mapping, and two enabled empty card slots. Its Play
+control then handed execution to the configured OpenGL runtime at 4x internal
+resolution.
+
+Normal controller input covered the title and main menus, training briefing,
+loadout, and live flight, followed by campaign STR/MDEC video, briefing,
+loadout, and live mission gameplay. The run observed active briefing XA,
+nonzero host SPU and CD/XA samples, and guarded native `GAME.BIN` dispatch
+after the resident `0x800B2A60` handoff. Startup underruns and long-run CD ring
+drops remain audio-tuning evidence rather than acceptance failures hidden by
+the smoke.
+
+Mission objectives and completion were intentionally outside this engineering
+smoke. The runtime-created memory cards are valid 128 KiB images and appeared
+as 0/15 blocks in the launcher, but the title exposes Save Mission only after
+mission completion, so save creation, load, and restart remain unverified. A
+future save-lifecycle check should use an appropriate deterministic fixture or
+separate gameplay acceptance rather than requiring a mission win as a test
+harness. No retail-derived capture or generated retail source was committed.
+
 ### 2026-11-04 - Rebase onto maintained PSXRecomp
 
 Rebased from the setup candidate's PSXRecomp pin `bca3aa8` to maintained

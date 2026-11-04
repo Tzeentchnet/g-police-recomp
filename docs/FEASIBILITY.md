@@ -44,14 +44,15 @@ The exact framework and launcher revisions are recorded in
 | Full-runtime self-check | Pass | Game dispatch, SCPH5552 backend, and overlay-cache configuration present |
 | Disc 1 bounded startup | Pass | Disc identified as `SLUS-00544`; runtime remained active for 15 seconds |
 | Disc 2 bounded startup | Pass | Disc identified as `SLUS-00556`; runtime remained active for 10 seconds |
+| Full-runtime launcher | Pass | Verified Disc 1, BIOS, OpenGL settings, controller mapping, both empty card slots, and Play handoff to the runtime |
 | Focused project tests | Pass | Twelve tests cover BIOS selection, overlay metadata/wiring, packaging, manifests, and warning fixtures |
 | Front-module native dispatch | Pass | Headless Disc 1 run hit `0x8009DAE8`; guarded static dispatcher recorded more than ten million module-range hits |
-| Game-module native dispatch | Not run | Shard is audited and linked; `0x800B2A60` was not reached without menu input |
-| Interactive gameplay | Not run | No mission completion or control/rendering acceptance pass |
-| FMV and XA playback | Not run | Disc inventory exists, but playback has not been accepted |
-| Save/load and memory card | Not run | Runtime path exists; title behavior is unverified |
+| Game-module native dispatch | Pass | Normal Disc 1 campaign flow reached `0x800B2A60` and sustained guarded static dispatch in live mission gameplay |
+| Interactive gameplay | Partial | Normal controller input covered menus, training briefing/loadout/live flight, and campaign briefing/loadout/live mission rendering; no objective or mission completion was attempted |
+| FMV and XA playback | Pass | Campaign STR/MDEC video, briefing XA, and nonzero host SPU and CD/XA samples were observed; startup underruns and long-run ring drops still need tuning |
+| Save/load and memory card | Partial | Runtime created valid 128 KiB cards and the launcher reported both as 0/15 blocks; no title save was created, loaded, or restart-tested |
 | Disc change | Not run | Both discs start independently; in-game swap flow is unverified |
-| Overlay native coverage | Partial | Both known modules have audited static shards; indirect-entry completeness and interactive `GAME.BIN` execution remain unproven |
+| Overlay native coverage | Partial | Both known modules have audited static shards and live native evidence; indirect-entry completeness remains unproven |
 | Setup ZIP acceptance | Pass | Windows `0.1.1` archive passed payload, platform-copy, native-emitter, and clean extracted-source rebuild checks |
 | Linux gameplay | Not run | No current native title acceptance |
 | macOS gameplay | Not run | No current native title acceptance |
@@ -65,8 +66,10 @@ The bounded checks prove that the full runtime can:
 - identify and open either configured disc;
 - reach guest execution without immediately exiting or tripping self-checks.
 
-They do **not** prove correct rendering, audio, input, timing, mission scripting,
-disc changes, save compatibility, or game completion.
+The separate Disc 1 interactive smoke provides bounded rendering, input,
+launcher, media, and live gameplay evidence. Neither test proves complete
+timing or mission scripting, objective completion, disc changes, save
+compatibility, or game completion.
 
 ## Known technical risks
 
@@ -78,7 +81,8 @@ loader contract is verified and both have hash-pinned guarded static shards,
 but the AOT audit intentionally does not claim complete indirect-entry
 coverage. Unknown PCs or changed bytes still fall back to the framework's
 dirty-RAM interpreter and optional local overlay cache. `FRONT.BIN` has live
-native evidence; `GAME.BIN` still needs an interactive path check. See
+native evidence, and the Disc 1 interactive smoke reached live `GAME.BIN`
+native dispatch. Complete indirect-entry coverage remains unproven. See
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### Media geometry
@@ -127,6 +131,10 @@ A gameplay-ready milestone should require at least:
 - repeatable setup-package acceptance on Windows;
 - a recorded decision for Linux and macOS support;
 - no unexplained linker/resource warnings in release builds.
+
+The 2026-11-04 smoke covers the launcher, menu, training, campaign-entry, and
+live mission control/rendering paths. It intentionally does not satisfy the
+representative mission-completion or save-lifecycle gates.
 
 No quality graduation or complete-game claim should be made before those gates
 are recorded here.

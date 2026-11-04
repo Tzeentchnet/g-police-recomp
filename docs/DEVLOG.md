@@ -125,3 +125,30 @@ also verifies the underlying generic issue: the emitter already generates
 terminating CPS transfers. A reachable continuation then receives an
 unreachable next-function call, while an unreachable data block reports
 `emitting fallthrough` without actually emitting that call.
+
+### 2026-11-04 - Runtime module loader and native AOT audit
+
+Traced the resident path for `FRONT.BIN` and `GAME.BIN` from filename
+selection through ISO lookup, repeat-read XOR validation, exact-size BIOS
+`memcpy`, instruction-cache flush, and resident-to-module handoff. Both files
+load verbatim at `0x80098B60`; front enters at `0x8009DAE8`, gameplay at
+`0x800B2A60`. The shorter front load intentionally leaves any prior game-only
+tail bytes untouched.
+
+Added a metadata-only original-disc AOT profile that accepts either USA disc,
+pins both complete module extents by SHA-256, verifies resident loader words,
+and preserves the four `FRONT.BIN` export-table dispatch PCs. Generate now
+publishes ignored guarded static C from the player's own disc and CMake links
+the dispatcher plus one translation unit per module.
+
+The production pipeline verified two images and two recipes, with every guard
+matching the known original-disc bytes. It emitted 19,801 audited variants
+with no failed or skipped shard. A full Windows runtime build linked all three
+translation units. A bounded Disc 1 debug probe then hit the front handoff and
+recorded more than ten million guarded static dispatches. The game handoff was
+not reached without menu input and remains part of interactive acceptance.
+
+Linking also exposed a generic high-level CMake argument-order bug:
+`GAME_OVERLAY_STATIC_C` is swallowed when written after `GEN_FULL_GLOB`.
+The title keeps the forwarded keyword before that multi-value argument and
+records the upstream candidate as U-008.

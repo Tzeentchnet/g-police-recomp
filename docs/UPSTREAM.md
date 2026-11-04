@@ -31,8 +31,9 @@ No finding below has been filed yet.
 | U-003 | Medium | Design question | Dependency contract | PSXRecomp and recomp-ui API compatibility is not expressed as a version/pin constraint |
 | U-004 | Medium | Confirmed | Windows resources | GCC 16 WinLibs injects `default-manifest.o` beside the framework manifest |
 | U-005 | Low | Confirmed | Function discovery | Explicit split transfers still emit dead fallthrough calls and warnings |
-| U-006 | Low | Title-specific | Overlay discovery | `FRONT.BIN` and `GAME.BIN` need a verified same-address title profile |
+| U-006 | Low | Title-specific | Overlay discovery | The declarative AOT pipeline handles G-Police's verified same-address modules |
 | U-007 | Medium | Confirmed | Setup packaging | The staged-source audit treats `if(NOT EXISTS ...)` probes as required files |
+| U-008 | Medium | Confirmed | CMake helper | Forwarded runtime keywords are swallowed after high-level multi-value arguments |
 
 ## U-001: Profile-driven retail BIOS generation
 
@@ -260,19 +261,22 @@ No warning address was promoted to a new seed.
 **Status:** Title-specific
 
 The generic play-free detector finds `FRONT.BIN` and `GAME.BIN` at the same
-inferred file base, `0x80098B60`. That is consistent with mutually exclusive
-front-end and gameplay modules. The existing generic detector already supports
-the discovery mechanism; the missing work is a verified G-Police profile,
-loader checks, and static roots.
+file base, `0x80098B60`. Resident instruction analysis now verifies that both
+files are copied verbatim to that destination and entered at `0x8009DAE8` and
+`0x800B2A60`.
 
-Keep this title-local unless implementing the profile exposes a generic
-framework limitation.
+[The title profile](../aot/overlays.json) uses the existing
+`fixed_address_extents` method, exact module hashes, loader-evidence words,
+strict producer bounds, and required dispatch entries. The original-disc
+pipeline produced two valid recipes and 19,801 audited static variants without
+requiring a framework code change. Keep the facts title-local. The separate
+CMake forwarding problem exposed while linking the output is U-008.
 
 ## U-007: Negative existence checks in setup-package audit
 
 **Status:** Confirmed
-**Local workaround:** The generated dispatch path is assembled from
-`GPOLICE_GENERATED_STEM` in [the title CMake file](../CMakeLists.txt).
+**Local workaround:** The generated dispatch and static-overlay paths are
+assembled from title variables in [the title CMake file](../CMakeLists.txt).
 
 ### Observation
 
@@ -295,6 +299,40 @@ incorrectly reports the probe target as a missing source dependency.
 
 A regression fixture should prove that a missing path used only by
 `if(NOT EXISTS ...)` passes while an unguarded missing source still fails.
+
+## U-008: High-level CMake forwarding after multi-value arguments
+
+**Status:** Confirmed
+**Local workaround:** Place `GAME_OVERLAY_STATIC_C` before `GEN_FULL_GLOB` in
+[the title CMake file](../CMakeLists.txt).
+
+### Observation
+
+`psxrecomp_add_game_runtime()` documents that arguments it does not consume are
+forwarded to `psxrecomp_add_runtime_target()`. The lower helper recognizes
+`GAME_OVERLAY_STATIC_C`; the high-level helper does not.
+
+When the title placed that keyword after high-level `GEN_FULL_GLOB`,
+`cmake_parse_arguments()` treated both the keyword and its path as additional
+glob values. The lower helper therefore received no static-output path and
+failed configuration because `aot/overlays.json` declared
+`generated/overlays_static.c` while the target appeared not to link it.
+Moving the forwarded keyword before the first high-level multi-value argument
+made it remain in `PSXG_UNPARSED_ARGUMENTS` and fixed the build.
+
+The same parser shape can swallow other lower-level keywords placed after
+`GEN_FULL_GLOB`, `CODEGEN_SETUP_SOURCES`, `EXCLUDE_BUILTIN_MODS`, or
+`NATIVE_IDLE_WAIT_SITES`. Existing framework comments already protect selected
+high-level arguments from this class of failure, but not
+`GAME_OVERLAY_STATIC_C`.
+
+### Proposed upstream shape
+
+- Parse `GAME_OVERLAY_STATIC_C` as a high-level one-value argument and forward
+  it explicitly; and
+- add a fixture that places lower-level arguments both before and after each
+  high-level multi-value list, proving call-site ordering does not change the
+  resulting runtime target.
 
 ## Filing checklist
 

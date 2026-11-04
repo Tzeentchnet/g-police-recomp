@@ -1,0 +1,99 @@
+{
+  "schema": "psxrecomp AOT methods v1",
+  "game_id": "SLUS-00544",
+  "static_output": "generated/overlays_static.c",
+  "disc_set": [
+    {
+      "name": "USA Disc 1",
+      "disc_hashes": {
+        "sha1": "2161d2860914b21d2bee457b3eda9d8e816d04a2"
+      }
+    },
+    {
+      "name": "USA Disc 2",
+      "disc_hashes": {
+        "sha1": "7f6ba87da62bbe565ba5603de462e3ed7c68429d"
+      }
+    }
+  ],
+  "file_aliases": {
+    "BOOT.EXE": [
+      "SLUS_005.44",
+      "SLUS_005.56"
+    ]
+  },
+  "strict_bounds": true,
+  "expected_records": 2,
+  "generic_exclude_files": [
+    {
+      "files": [
+        "FRONT.BIN",
+        "GAME.BIN"
+      ],
+      "reason": "The resident loader contract establishes both same-address executable images."
+    }
+  ],
+  "checks": [
+    {
+      "method": "words",
+      "file": "BOOT.EXE",
+      "file_offset": "0x800",
+      "base": "0x80010000",
+      "values": {
+        "0x80011D20": "0x80098B60",
+        "0x8001F908": "0x3C058001",
+        "0x8001F90C": "0x8CA51D20",
+        "0x80020040": "0x0C007E41",
+        "0x80020044": "0x00002021",
+        "0x80020058": "0x0C0276BA",
+        "0x8002008C": "0x0C007E41",
+        "0x80020090": "0x34040001",
+        "0x800200A4": "0x0C02CA98"
+      }
+    }
+  ],
+  "images": [
+    {
+      "method": "fixed_address_extents",
+      "allow_missing": true,
+      "entries": [
+        "0x8009DAE8"
+      ],
+      "dispatch_entries": [
+        "0x8009A950",
+        "0x8009A9D4",
+        "0x8009A9E8",
+        "0x8009AA74"
+      ],
+      "extents": [
+        {
+          "file": "FRONT.BIN",
+          "file_offset": "0x0",
+          "base": "0x0",
+          "address": "0x0",
+          "size": "0x3400C",
+          "sha256": "e183ee4377b69e65b023b7cc573e108580dea423618164c0d021d1fa298eca7d",
+          "load_addr": "0x80098B60"
+        }
+      ]
+    },
+    {
+      "method": "fixed_address_extents",
+      "allow_missing": true,
+      "entries": [
+        "0x800B2A60"
+      ],
+      "extents": [
+        {
+          "file": "GAME.BIN",
+          "file_offset": "0x0",
+          "base": "0x0",
+          "address": "0x0",
+          "size": "0x5D364",
+          "sha256": "07dad7905d0587f8b253b261c48f069da2c7bbf543ef36f4fce1fc3b32655f4b",
+          "load_addr": "0x80098B60"
+        }
+      ]
+    }
+  ]
+}

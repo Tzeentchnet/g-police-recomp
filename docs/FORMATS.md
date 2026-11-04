@@ -70,26 +70,53 @@ The 2,048-byte PS-X EXE header is followed by the loaded body. The body occupies
 
 These are game-specific loadable code/data modules, not PS-X EXEs.
 
+| Property | `FRONT.BIN` | `GAME.BIN` |
+| --- | --- | --- |
+| Size | 213,004 (`0x3400C`) | 381,796 (`0x5D364`) |
+| SHA-256 | `e183ee4377b69e65b023b7cc573e108580dea423618164c0d021d1fa298eca7d` | `07dad7905d0587f8b253b261c48f069da2c7bbf543ef36f4fce1fc3b32655f4b` |
+| ISO sectors read | 105 | 187 |
+| Load address | `0x80098B60` | `0x80098B60` |
+| Exclusive end | `0x800CCB6C` | `0x800F5EC4` |
+| Stable-read XOR32 | `0xEBCB7FCC` | `0xE31D4916` |
+| Resident handoff | `0x8009DAE8` | `0x800B2A60` |
+
+The resident loader uses the ISO directory's exact byte size, reads enough
+2,048-byte sectors to cover it, requires repeated reads to have the same
+32-bit-word XOR, copies exactly that byte size to `0x80098B60`, and flushes the
+instruction cache. There is no module decompression, relocation stream, PS-X
+EXE header, or hard-coded expected XOR in this path.
+
+The two files are therefore verified mutually exclusive same-address modules.
+The framework's page-aligned AOT records begin at `0x80098000`; their first
+`0xB60` bytes are generated leading padding and are not part of either disc
+file. Loading shorter `FRONT.BIN` after `GAME.BIN` does not clear the game-only
+tail.
+
 ### `FRONT.BIN`
 
-- Size: 213,004 bytes.
-- Begins with `u32 4` followed by four RAM pointers.
-- Contains front-end text, equipment descriptions, and STR paths.
-- Inferred file base: `0x80098B60`.
-- Generic discovery found 203 candidate function entries and four explicit
-  export-table dispatch entries.
+The file begins with:
+
+```c
+uint32_t export_count;      // 4
+uint32_t export_pc[4];      // RAM addresses below
+```
+
+The four pointers are `0x8009A950`, `0x8009A9D4`, `0x8009A9E8`, and
+`0x8009AA74`. The owned-input AOT profile preserves them as required dispatch
+PCs without assuming that each is an independently discovered function
+boundary. Static analysis found 203 function roots and 207 dispatch roots.
+The file also contains front-end text, equipment descriptions, and STR paths.
 
 ### `GAME.BIN`
 
-- Size: 381,796 bytes.
-- Begins with module/debug metadata such as `Animation` and embedded source
-  paths before executable code.
-- Inferred file base: `0x80098B60`.
-- Generic discovery found 502 candidate function entries.
+The file begins with module/debug metadata such as `Animation` and embedded
+source paths before executable code. It is not a pure text segment beginning
+at file offset zero. The verified AOT recipe currently carries 507 function
+roots and 502 dispatch roots after title-declared entry enrichment.
 
-The matching base strongly suggests mutually exclusive front-end and gameplay
-modules. Do not bake either address into a general parser until the resident
-loader is traced.
+The load address is a G-Police loader fact recorded in
+[`aot/overlays.json`](../aot/overlays.json), not a convention that a general
+disc parser should apply to unrelated `.BIN` files.
 
 ## `RDR2` archive selector
 

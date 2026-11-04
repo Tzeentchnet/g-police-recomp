@@ -88,8 +88,8 @@ Initialize the pinned framework trees first:
 git submodule update --init --recursive
 ```
 
-Generate the selected SCPH5552 BIOS backend and resident game code from owned
-inputs:
+Generate the selected SCPH5552 BIOS backend, resident game code, and audited
+static code for `FRONT.BIN` and `GAME.BIN` from owned inputs:
 
 ```sh
 python scripts/gpolice_psxrecomp_cli.py generate \
@@ -98,8 +98,13 @@ python scripts/gpolice_psxrecomp_cli.py generate \
   --bios "/path/to/your/SCPH5552.bin"
 ```
 
-The title adapter only corrects profile-driven retail BIOS staging. Disc
-preparation and code emission remain delegated to the pinned upstream CLI.
+The metadata-only [overlay profile](aot/overlays.json) verifies the disc,
+resident loader evidence, exact module hashes, load ranges, and required
+entries before PSXRecomp publishes guarded static translation units under the
+ignored `generated/` directory. The title adapter only corrects
+profile-driven retail BIOS staging; disc preparation and all code emission
+remain delegated to the pinned upstream CLI. Python 3.11 or newer is required
+for this AOT step.
 
 Configure and build a full runtime:
 
@@ -123,9 +128,12 @@ As of 2026-11-04:
 - recomp-ui is pinned to
   `dd47b1887b1858473bb42c38f4307f0eb1b07e60`.
 - The current emitters produce 33 resident-code shards and an SCPH5552 backend.
+- The owned-input AOT profile produces two audited module shards plus a static
+  dispatcher; no retail bytes or generated retail C are tracked.
 - A clean Windows full-runtime configure and build passes.
-- Runtime self-checks pass with generated game dispatch, SCPH5552, and overlay
-  caching enabled.
+- A bounded live probe reached the `FRONT.BIN` handoff through guarded native
+  dispatch. `GAME.BIN` is audited and linked but still needs an interactive
+  gameplay-path check.
 - Disc 1 (`SLUS-00544`) and Disc 2 (`SLUS-00556`) each pass a bounded headless
   startup check.
 
@@ -138,6 +146,7 @@ See [docs/FEASIBILITY.md](docs/FEASIBILITY.md) for the full validation matrix.
 | --- | --- |
 | `game.toml` | Title identity, executable layout, disc set, BIOS profile, and runtime policy |
 | `CMakeLists.txt` | Title-to-framework build integration |
+| `aot/overlays.json` | Metadata-only original-disc recipes for the two runtime modules |
 | `scripts/gpolice_psxrecomp_cli.py` | SCPH5552-aware adapter over the pinned upstream CLI |
 | `codegen_setup.c` | First-run setup-host configuration |
 | `seeds/` | Resident executable discovery seeds |

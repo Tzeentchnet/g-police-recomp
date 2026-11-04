@@ -15,7 +15,8 @@ The current milestone is a reproducible Windows development build that:
 2. generates resident game and BIOS code with the pinned PSXRecomp;
 3. starts with either game disc;
 4. preserves a first-run setup-host route for users without generated code; and
-5. provides a foundation for overlay and data-format research.
+5. regenerates guarded native coverage for the two runtime modules from the
+   user's owned disc.
 
 The exact framework and launcher revisions are recorded in
 [the project manifest](../project-manifest.toml) and
@@ -33,19 +34,24 @@ The exact framework and launcher revisions are recorded in
 | BIOS generation | Pass | SCPH5552 backend generated through the title adapter |
 | Resident game generation | Pass | 33 C shards generated; 1,438 emitted function bodies |
 | Resident transfer warning audit | Pass | Seven warnings classified as five shared continuations and two unreachable data regions; no callable seed missing |
+| Module loader audit | Pass | Exact destination, byte lengths, repeat-read XOR validation, copy, cache flush, and resident handoffs verified |
+| Original-disc AOT profile | Pass | Either USA disc yields two hash-pinned, strict-range recipes; all guard bytes match known inputs |
+| Static module build | Pass | `FRONT.BIN` and `GAME.BIN` produce two module units plus a dispatcher with 19,801 audited variants |
 | Clean setup-host configure/build | Pass | Configures without pre-existing generated game or BIOS code |
-| Clean full-runtime configure/build | Pass | Generated game dispatch and SCPH5552 backend required |
+| Clean full-runtime configure/build | Pass | Generated game dispatch, SCPH5552 backend, and all three static-overlay units linked |
 | Windows PE resources | Pass | Setup and full builds contain one UTF-8/long-path ID-1 manifest and the application icon |
 | Setup-host self-check | Pass | Setup host reports the expected executable identity and mode |
 | Full-runtime self-check | Pass | Game dispatch, SCPH5552 backend, and overlay-cache configuration present |
 | Disc 1 bounded startup | Pass | Disc identified as `SLUS-00544`; runtime remained active for 15 seconds |
 | Disc 2 bounded startup | Pass | Disc identified as `SLUS-00556`; runtime remained active for 10 seconds |
-| Focused title-adapter tests | Pass | Four tests cover BIOS profile selection and setup/package wiring |
+| Focused project tests | Pass | Twelve tests cover BIOS selection, overlay metadata/wiring, packaging, manifests, and warning fixtures |
+| Front-module native dispatch | Pass | Headless Disc 1 run hit `0x8009DAE8`; guarded static dispatcher recorded more than ten million module-range hits |
+| Game-module native dispatch | Not run | Shard is audited and linked; `0x800B2A60` was not reached without menu input |
 | Interactive gameplay | Not run | No mission completion or control/rendering acceptance pass |
 | FMV and XA playback | Not run | Disc inventory exists, but playback has not been accepted |
 | Save/load and memory card | Not run | Runtime path exists; title behavior is unverified |
 | Disc change | Not run | Both discs start independently; in-game swap flow is unverified |
-| Overlay native coverage | Partial | Cache enabled; `FRONT.BIN` and `GAME.BIN` discovered, not yet shipped as audited native shards |
+| Overlay native coverage | Partial | Both known modules have audited static shards; indirect-entry completeness and interactive `GAME.BIN` execution remain unproven |
 | Setup ZIP acceptance | Pass | Windows `0.1.1` archive passed payload, platform-copy, native-emitter, and clean extracted-source rebuild checks |
 | Linux gameplay | Not run | No current native title acceptance |
 | macOS gameplay | Not run | No current native title acceptance |
@@ -67,9 +73,12 @@ disc changes, save compatibility, or game completion.
 ### Runtime-loaded code
 
 The resident executable is not the whole game. `FRONT.BIN` and `GAME.BIN`
-contain code loaded over the same RAM region after the resident image. Until
-their loader contract and entries are audited and compiled, uncovered paths
-use the framework's dirty-RAM interpreter and optional local overlay cache. See
+contain code loaded over the same RAM region after the resident image. Their
+loader contract is verified and both have hash-pinned guarded static shards,
+but the AOT audit intentionally does not claim complete indirect-entry
+coverage. Unknown PCs or changed bytes still fall back to the framework's
+dirty-RAM interpreter and optional local overlay cache. `FRONT.BIN` has live
+native evidence; `GAME.BIN` still needs an interactive path check. See
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### Media geometry

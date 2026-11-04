@@ -25,19 +25,19 @@ scripts/gpolice_psxrecomp_cli.py
                   |
                   v
        pinned PSXRecomp CLI and emitters
-          |                       |
-          v                       v
- generated resident game C   generated BIOS C
-          |                       |
-          +-----------+-----------+
-                      v
-             psx-runtime executable
-                      |
-          +-----------+------------+
-          |                        |
-          v                        v
-   resident native dispatch   runtime-loaded code
-                              (interpreter/cache/AOT)
+          |              |                    |
+          v              v                    v
+ generated resident C  generated BIOS C  audited module C
+          |              |               (aot/overlays.json)
+          +--------------+--------------------+
+                         v
+                psx-runtime executable
+                         |
+             +-----------+------------+
+             |                        |
+             v                        v
+      resident native dispatch  guarded module dispatch
+                                (static AOT/interpreter)
 ```
 
 The title adapter exists only because the current upstream CLI hard-codes the
@@ -62,7 +62,9 @@ The full target links:
 - the recomp-ui launcher;
 - the generated SCPH5552 BIOS backend;
 - 33 generated resident-game translation units;
-- the generated resident dispatch table.
+- the generated resident dispatch table; and
+- an ignored, owned-input-generated static dispatcher plus one translation
+  unit for each verified runtime module.
 
 Generated retail-derived code remains local and ignored.
 
@@ -167,24 +169,44 @@ support, foundational 3D math, and shared rendering services.
 
 ## Runtime-loaded modules
 
-The resident executable references both `FRONT.BIN` and `GAME.BIN`.
-PSXRecomp's generic play-free detector independently recovered both files at
-the same inferred file base:
+The resident loader contract is now statically verified. Both modules are
+copied verbatim into the same destination and therefore form mutually
+exclusive overlays:
 
-| Module | File size | Inferred file base | Inferred end | Candidate functions |
-| --- | ---: | --- | --- | ---: |
-| `FRONT.BIN` | 213,004 | `0x80098B60` | `0x800CCB6C` | 203 |
-| `GAME.BIN` | 381,796 | `0x80098B60` | `0x800F5EC4` | 502 |
+| Module | Mode | File size | Destination | Exclusive end | Sectors | Stable XOR32 | Resident handoff |
+| --- | ---: | ---: | --- | --- | ---: | --- | --- |
+| `FRONT.BIN` | 0 | 213,004 | `0x80098B60` | `0x800CCB6C` | 105 | `0xEBCB7FCC` | `0x8009DAE8` |
+| `GAME.BIN` | 1 | 381,796 | `0x80098B60` | `0x800F5EC4` | 187 | `0xE31D4916` | `0x800B2A60` |
 
-The framework capture region is page-aligned to `0x80098000`; the first
-`0xB60` bytes are leading guard/padding before the file base.
+`func_8001F904(mode)` selects `\FRONT.BIN;1` for mode 0 and
+`\GAME.BIN;1` for mode 1. It reads the destination through the resident word
+at `0x80011D20`, whose value is `0x80098B60`, then calls the retry wrapper
+`func_8001F4A0`.
 
-**Inference:** the front-end and gameplay modules are mutually exclusive
-overlays loaded into the same RAM window. A runtime loader trace still needs to
-confirm the destination, lifetime, and any transformations.
+The worker `func_8001F4E4`:
+
+1. resolves the ISO9660 file and uses its exact byte size;
+2. reads `ceil(size / 2048)` sectors;
+3. computes the XOR of its 32-bit words with `func_8001FB4C`;
+4. requires repeated reads to produce the same XOR, using separate front/game
+   flags and saved values at `0x800731C0-0x800731CC`;
+5. retries up to ten times;
+6. copies exactly the ISO file size to `0x80098B60` with BIOS `memcpy`; and
+7. flushes the instruction cache.
+
+The XOR is a repeat-read consistency check, not a comparison with a compiled-in
+expected digest. Because the copy is exact-sized, loading shorter `FRONT.BIN`
+after `GAME.BIN` leaves the old game bytes above `0x800CCB6C` untouched. No
+current evidence shows those stale bytes are called while the front module is
+active.
+
+`func_8001FE50` calls the front loader at `0x80020040`, then calls
+`0x8009DAE8` with `a0 = 0` at `0x80020058`. Its gameplay path calls the game
+loader at `0x8002008C`, then calls `0x800B2A60` at `0x800200A4`.
 
 `FRONT.BIN` begins with a four-entry pointer table and contains menus, campaign
-text, equipment descriptions, and all known STR movie paths.
+text, equipment descriptions, and all known STR movie paths. Its four table
+targets are `0x8009A950`, `0x8009A9D4`, `0x8009A9E8`, and `0x8009AA74`.
 
 `GAME.BIN` contains embedded paths naming gameplay subsystems:
 
@@ -207,6 +229,35 @@ text, equipment descriptions, and all known STR movie paths.
 
 The file begins with module/debug metadata and strings before executable code;
 it is not a raw code blob starting at offset zero.
+
+### Owned-input native module generation
+
+[The AOT profile](../aot/overlays.json) contains only disc identities, loader
+evidence words, hashes, sizes, addresses, and entry metadata. It accepts either
+USA disc because both carry byte-identical modules, excludes those two files
+from heuristic generic extraction, verifies their complete byte extents, and
+publishes guarded C only under the ignored `generated/` directory.
+
+The current profile run produced two verified recipes and three C translation
+units: the dispatcher and one unit per module. The compiler reported:
+
+| Module | Function roots | Dispatch roots | Static discovery roots | Recompiled functions |
+| --- | ---: | ---: | ---: | ---: |
+| `FRONT.BIN` | 203 | 207 | 141 | 204 |
+| `GAME.BIN` | 507 | 502 | 396 | 507 |
+
+Continuation-passing resume coverage adds 19,090 guarded wrappers, for 19,801
+audited static variants in total. The audit verified that every guard matches
+the known original-disc input and that both resident handoffs and all four
+front export-table PCs are present. It deliberately reports
+`full_static_coverage_proven = false`: static discovery is strong coverage, not
+proof that every possible indirect entry has been found, so misses still fall
+back to the dirty-RAM interpreter.
+
+A bounded headless Disc 1 run reached the front handoff once and recorded more
+than ten million guarded static hits in the module address range. The game
+handoff was not reached without menu input; exercising it remains part of the
+interactive acceptance task.
 
 ## Resource system
 
@@ -283,21 +334,25 @@ resident image.
 With `overlay_cache = true`:
 
 1. unknown executable RAM can run through the dirty-RAM interpreter;
-2. runtime observations can be recorded as private overlay captures;
-3. matching overlay regions can be compiled into guarded native cache shards;
-4. a future audited AOT profile can build coverage directly from owned disc
-   files.
+2. the linked static dispatcher checks current code bytes before using a
+   matching `FRONT.BIN` or `GAME.BIN` native variant;
+3. runtime observations can still be recorded as private overlay captures;
+4. matching uncovered regions can be compiled into guarded local cache shards
+   when a toolchain is present; and
+5. any remaining gap falls back to interpretation.
 
-The current headless checks reported no bundled overlay toolchain, so uncached
-module gaps fall back to interpretation. This is acceptable for bring-up but
-not the final performance plan.
+The setup and source-generation paths build the static variants from the
+player's owned disc. The generated C, private captures, module binaries, and
+BIOS bytes remain ignored and are not release-source inputs.
 
 ## Open architecture questions
 
-- What resident function loads each module, and what validation or relocation
-  does it perform?
-- Are `FRONT.BIN` and `GAME.BIN` copied verbatim to `0x80098B60`?
-- Which module exports are called by the resident shell?
+- What consumes the four `FRONT.BIN` header pointers beyond their verified
+  dispatch role?
+- Can any front-end path reach stale `GAME.BIN` tail bytes left above
+  `0x800CCB6C`, or are all calls constrained to the active module?
+- Which gameplay flow first reaches `0x800B2A60`, and does it execute through
+  the audited static variant during interactive play?
 - How do type-29 texture descriptors associate type-25 image planes and
   type-27 palettes, including transparency and texture-page selection?
 - What distinguishes the 7,568 class-`0x026C` records that do not match the

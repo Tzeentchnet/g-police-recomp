@@ -115,6 +115,14 @@ cmake -S . -B build -G Ninja \
 cmake --build build --target psx-runtime
 ```
 
+Launcher-driven first-run setup uses the
+[G-Police CLI adapter](scripts/gpolice_psxrecomp_cli.py) and creates the
+product build under `build-release/`.
+
+On Windows, run `launch.bat` from the repository root to open the launcher.
+The script finds the runtime in common local build directories and passes
+`--launcher` so the launcher opens even when it is configured to be skipped.
+
 To exercise the first-run setup path instead, configure with
 `-DPSXRECOMP_FORCE_SETUP_HOST=ON`. The setup executable asks for owned disc and
 BIOS inputs and performs local generation before rebuilding the full runtime.

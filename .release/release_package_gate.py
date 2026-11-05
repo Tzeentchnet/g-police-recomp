@@ -71,6 +71,44 @@ def source_contract(root, version):
              capture(wrapper, r'--exe-name\s+(?:"([^"]+)"|\'([^\']+)\'|([^\s\\]+))')]
     if len(set(names)) != 1:
         raise ValueError('executable names differ: ' + repr(names))
+    expected_setup = {
+        'display_name': 'G-Police',
+        'project_root_env': 'G_POLICE_PROJECT_ROOT',
+        'build_dir_env': 'G_POLICE_BUILD_DIR',
+        'force_setup_env': 'G_POLICE_FORCE_SETUP',
+        'psxrecomp_cli_relpath': 'scripts/gpolice_psxrecomp_cli.py',
+        'seed_cfg_relpath': 'game.toml',
+        'game_toml_relpath': 'game.toml',
+        'gen_marker_relpath': 'generated/SLUS_005.44_dispatch.c',
+        'build_dir_name': 'build-release',
+        'cmake_target': 'psx-runtime',
+        'exe_basename': 'G_Police_Recompiled',
+    }
+    setup = {}
+    for field, expected in expected_setup.items():
+        match = re.search(r'\.' + re.escape(field) + r'\s*=\s*"([^"]+)"',
+                          codegen)
+        if not match:
+            raise ValueError('missing codegen setup field: ' + field)
+        setup[field] = match.group(1)
+        if setup[field] != expected:
+            raise ValueError('codegen setup field differs: ' + field +
+                             ' = ' + repr(setup[field]) +
+                             ', expected ' + repr(expected))
+    adapter = root / setup['psxrecomp_cli_relpath']
+    if not adapter.is_file():
+        raise ValueError('missing G-Police setup adapter: ' + str(adapter))
+    if '--project-file ' + setup['psxrecomp_cli_relpath'] not in wrapper:
+        raise ValueError('setup package omits the G-Police CLI adapter')
+    if '--omit-openbios' not in wrapper:
+        raise ValueError('G-Police setup package must require its retail BIOS')
+    game = tomllib.loads((root / setup['game_toml_relpath']).read_text(
+        encoding='utf-8-sig'))
+    bios_profile = game.get('recompiler', {}).get('bios_config')
+    if bios_profile != 'psxrecomp/bios/SCPH5552.toml':
+        raise ValueError('G-Police BIOS profile differs: ' + repr(bios_profile))
+    if game.get('runtime', {}).get('openbios', True):
+        raise ValueError('G-Police setup unexpectedly enables OpenBIOS')
     if b'\r' in (root / 'scripts/package_setup_release.sh').read_bytes() or '--runtime-dir' not in wrapper or 'project-manifest.toml' not in wrapper:
         raise ValueError('wrapper requires LF, runtime mods, and project-manifest.toml')
     manifest = tomllib.loads((root / 'project-manifest.toml').read_text(encoding='utf-8-sig'))
@@ -94,7 +132,12 @@ def source_contract(root, version):
             'framework_commit': framework, 'framework_tree': tree, 'recomp_ui_commit': ui,
             'recomp_net_commit': git('-C', 'psxrecomp', 'rev-parse', 'HEAD:lib/recomp-net'),
             'rbengine_commit': git('-C', 'psxrecomp', 'rev-parse', 'HEAD:lib/retcomm-rbengine'),
-            'exe_name': exe, 'openbios_required': False}
+            'exe_name': exe, 'openbios_required': False,
+            'setup_cli': setup['psxrecomp_cli_relpath'],
+            'setup_build_dir': setup['build_dir_name'],
+            'setup_target': setup['cmake_target'],
+            'setup_game_dispatch': setup['gen_marker_relpath'],
+            'setup_bios_profile': bios_profile}
     # An explicit source policy binds OpenBIOS identity. Publication still needs R4.
     policy_path = root / '.release/policy.json'
     if policy_path.exists():

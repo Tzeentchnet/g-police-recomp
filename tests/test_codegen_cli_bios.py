@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -64,6 +65,33 @@ class CodegenCliBiosTests(unittest.TestCase):
         relpath = "scripts/gpolice_psxrecomp_cli.py"
         self.assertIn(f'.psxrecomp_cli_relpath = "{relpath}"', codegen)
         self.assertIn(f"--project-file {relpath}", package)
+        self.assertIn("--omit-openbios", package)
+
+    def test_setup_host_contract_matches_project(self):
+        codegen = (ROOT / "codegen_setup.c").read_text(encoding="utf-8")
+        expected = {
+            "display_name": "G-Police",
+            "project_root_env": "G_POLICE_PROJECT_ROOT",
+            "build_dir_env": "G_POLICE_BUILD_DIR",
+            "force_setup_env": "G_POLICE_FORCE_SETUP",
+            "psxrecomp_cli_relpath": "scripts/gpolice_psxrecomp_cli.py",
+            "seed_cfg_relpath": "game.toml",
+            "game_toml_relpath": "game.toml",
+            "gen_marker_relpath": "generated/SLUS_005.44_dispatch.c",
+            "build_dir_name": "build-release",
+            "cmake_target": "psx-runtime",
+            "exe_basename": "G_Police_Recompiled",
+        }
+
+        for field, value in expected.items():
+            match = re.search(
+                rf'\.{re.escape(field)}\s*=\s*"([^"]+)"',
+                codegen,
+            )
+            self.assertIsNotNone(match, f"missing setup field: {field}")
+            self.assertEqual(match.group(1), value, field)
+
+        self.assertTrue((ROOT / expected["psxrecomp_cli_relpath"]).is_file())
 
 
 if __name__ == "__main__":

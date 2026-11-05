@@ -119,9 +119,19 @@ Launcher-driven first-run setup uses the
 [G-Police CLI adapter](scripts/gpolice_psxrecomp_cli.py) and creates the
 product build under `build-release/`.
 
+Vulkan is the default renderer and OpenGL remains available as a fallback.
+The framework-owned Internal Resolution feature is enabled at 4x by default:
+geometry is rasterized into a larger GPU render target before presentation,
+rather than merely applying bilinear filtering while resizing the native image
+to the window. Fresh launcher profiles also enable Fast Loading (4x) and PGXP
+Precision by default. Extended Draw Distance remains opt-in at the validated
+145,000-unit setting, and saved mod choices override all fresh-profile defaults.
+
 On Windows, run `launch.bat` from the repository root to open the launcher.
 The script finds the runtime in common local build directories and passes
 `--launcher` so the launcher opens even when it is configured to be skipped.
+Local CMake trees built as setup hosts, or without the generated-source
+manifest, are skipped so Play always uses a runtime with game dispatch linked.
 
 To exercise the first-run setup path instead, configure with
 `-DPSXRECOMP_FORCE_SETUP_HOST=ON`. The setup executable asks for owned disc and
@@ -133,8 +143,8 @@ As of 2026-11-04:
 
 - PSXRecomp is pinned to `060ef0ab34a27ab9c35ad92f52f573e8cea22086`
   (`v0.3.4-alpha-28-g060ef0ab`).
-- recomp-ui is pinned to
-  `dd47b1887b1858473bb42c38f4307f0eb1b07e60`.
+- The G-Police recomp-ui fork is pinned to
+  `8bc5137ce921dc7fe3e74bb865b59ac0b52934e4`.
 - The current emitters produce 33 resident-code shards and an SCPH5552 backend.
 - The owned-input AOT profile produces two audited module shards plus a static
   dispatcher; no retail bytes or generated retail C are tracked.
@@ -144,6 +154,9 @@ As of 2026-11-04:
   through guarded native dispatch.
 - The full launcher verified Disc 1, BIOS, controller, renderer, and empty
   memory-card configuration, then handed Play to the OpenGL runtime.
+- A 20-second Vulkan smoke at 1600x1200 with an Xbox One controller crossed
+  the BIOS-to-game handoff on an NVIDIA GeForce RTX 5070 and rendered into the
+  GPU-authoritative VRAM target at 4x internal resolution.
 - Normal controller input covered the title menus, training briefing and live
   flight, plus campaign FMV, briefing, loadout, and live mission entry.
 - Disc 1 (`SLUS-00544`) and Disc 2 (`SLUS-00556`) each pass a bounded headless

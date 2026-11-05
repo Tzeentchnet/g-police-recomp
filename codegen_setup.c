@@ -5,6 +5,12 @@
 
 #include "psxrecomp_codegen_host.h"
 
+static const char* const kGPoliceRendererLabels[] = {
+    "Software",
+    "OpenGL (Fallback)",
+    "Vulkan (Recommended)",
+};
+
 static const PsxrecompCodegenHostConfig kCodegenConfig = {
     .display_name = "G-Police",
     .project_root_env = "G_POLICE_PROJECT_ROOT",
@@ -33,6 +39,11 @@ static const PsxrecompCodegenHostConfig kCodegenConfig = {
 
 void psx_game_codegen_setup_apply(RecompLauncherCGameInfo* gi) {
     psxrecomp_codegen_host_apply(gi, &kCodegenConfig);
+    gi->renderer_labels = kGPoliceRendererLabels;
+#if !defined(PSX_HAS_GAME_DISPATCH)
+    gi->needs_setup = 1;
+    gi->prepare_required_before_continue = 1;
+#endif
 }
 
 void psx_game_codegen_relaunch_or_exit(const char* disc_path) {

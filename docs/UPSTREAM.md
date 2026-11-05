@@ -9,6 +9,8 @@ problem statement.
 Baseline reviewed: PSXRecomp
 `060ef0ab34a27ab9c35ad92f52f573e8cea22086` and recomp-ui
 `dd47b1887b1858473bb42c38f4307f0eb1b07e60`.
+The title currently layers the G-Police launcher dashboard commit
+`8bc5137ce921dc7fe3e74bb865b59ac0b52934e4` on that reviewed UI baseline.
 
 ## Status vocabulary
 

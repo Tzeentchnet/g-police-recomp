@@ -27,6 +27,7 @@ bios_config = "psxrecomp/bios/SCPH5552.toml"
 seeds = "seeds/ghidra_funcs.txt"
 out_dir = "generated"
 strict = true
+mod_instruction_sites = ["0x80020FB8", "0x80020FCC"]
 
 [runtime]
 window_title = "G-Police Recompiled"
@@ -34,9 +35,14 @@ memcard_dir = "saves"
 openbios = false
 overlay_cache = true
 
+[launcher]
+quick_controls = true
+
 [video]
-renderer = "opengl"
+renderer = "vulkan"
+offer_vulkan = true
 aspect_ratio = "4:3"
+pgxp_mod_only = true
 
 [controller]
 default_mode = "digital"

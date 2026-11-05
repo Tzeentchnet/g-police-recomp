@@ -40,9 +40,11 @@ psxrecomp_add_game_runtime(psx-runtime
 
 
     ENABLE_SETUP_WIZARD
+    PGXP
     EXE_NAME "G_Police_Recompiled"
     WINDOW_TITLE "G-Police Recompiled"
     DEFAULT_GAME_CONFIG_PATH "game.toml"
+    PRELOADED_MODS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mods/preloaded"
     MAX_PLAYERS 1
 
 
@@ -51,6 +53,9 @@ psxrecomp_add_game_runtime(psx-runtime
     GEN_FULL_GLOB "${GPOLICE_GENERATED_STEM}_full_*.c"
     CODEGEN_SETUP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/codegen_setup.c"
 )
+
+target_sources(psx-runtime PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/gpolice_draw_distance_mod.c")
 
 # GCC 16 WinLibs injects default-manifest.o even when the target supplies one.
 if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

@@ -1,0 +1,41 @@
+format_version = 5
+id = "psx.enhancement.pgxp"
+version = "1.0.0"
+name = "PGXP Precision"
+author = "psxrecomp"
+description = "Sub-pixel vertex precision and perspective-correct texturing (the PGXP technique): the runtime shadows the GTE's full-precision projections and follows them to the GPU, so 3D polygons stop wobbling between whole pixels and large floor/wall textures stop warping. Visual-only unless its precise culling option is on: the game's own math, culling and readback see exactly what real hardware produces."
+resolver = "declarative"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "SLUS-00544"
+
+[[feature]]
+id = "pgxp"
+name = "PGXP Precision"
+description = "Enabled by default. G-Police is compiled with the full PGXP hook path; this corrects validated 3D vertices and perspective texture coordinates while leaving unproven vertices, sprites and UI on the faithful path. Internal Resolution should be 2x or higher for the geometry improvement to be visible."
+group = "Visual"
+default_enabled = true
+quick = true
+
+[[option]]
+feature = "pgxp"
+id = "cpu_mode"
+label = "CPU-mode propagation"
+description = "Also track precision through CPU arithmetic. Leave this off unless a G-Police coverage trace shows that projected vertices are repacked through integer math; validation rejects stale values."
+group = "Visual"
+type = "boolean"
+default = "false"
+
+[[option]]
+feature = "pgxp"
+id = "culling"
+label = "Precise culling"
+description = "Use the same full-precision positions for face-culling decisions. This changes guest-visible geometry and can increase the primitive count, so it remains off until G-Police packet and performance headroom are validated."
+group = "Visual"
+type = "boolean"
+default = "false"
+
+[[plugin]]
+feature = "pgxp"
+id = "psx.pgxp"

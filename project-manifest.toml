@@ -13,7 +13,7 @@ status = "development"
 repository = "https://github.com/RetroPortingToolKit/psxrecomp"
 commit = "060ef0ab34a27ab9c35ad92f52f573e8cea22086"
 tree = "c032fa59a497d0f32fc8f01e27f80f1299d51fff"
-recomp_ui_commit = "dd47b1887b1858473bb42c38f4307f0eb1b07e60"
+recomp_ui_commit = "8bc5137ce921dc7fe3e74bb865b59ac0b52934e4"
 
 [bios]
 required = true

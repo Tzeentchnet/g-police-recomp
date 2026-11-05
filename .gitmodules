@@ -4,5 +4,5 @@
 	branch = master
 [submodule "recomp-ui"]
 	path = recomp-ui
-	url = https://github.com/RetroPortingToolKit/recomp-ui.git
-	branch = master
+	url = https://github.com/Tzeentchnet/recomp-ui.git
+	branch = feat/gpolice-quick-mods-dashboard

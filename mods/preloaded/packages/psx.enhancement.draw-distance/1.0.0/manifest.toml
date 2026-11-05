@@ -1,0 +1,23 @@
+format_version = 5
+id = "psx.enhancement.draw-distance"
+version = "1.0.0"
+name = "Extended Draw Distance"
+author = "G-Police Recompiled"
+description = "Raises G-Police's normal 110,000-unit draw distance to the stress-tested 145,000-unit extended limit without coupling it to a lower frontend frame-rate setting. More distant geometry increases rendering work."
+resolver = "declarative"
+save_compatibility = "isolated"
+
+[[target]]
+game_id = "SLUS-00544"
+
+[[feature]]
+id = "draw-distance"
+name = "Extended Draw Distance"
+description = "Disabled by default. Extends the normal 110,000-unit view to a fixed, stress-tested 145,000-unit limit while preserving the selected frame-rate option. Busy scenes may run slower."
+group = "Visual"
+default_enabled = false
+quick = true
+
+[[plugin]]
+feature = "draw-distance"
+id = "gpolice.extended-draw-distance"

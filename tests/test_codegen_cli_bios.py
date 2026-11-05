@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import re
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -92,6 +95,50 @@ class CodegenCliBiosTests(unittest.TestCase):
             self.assertEqual(match.group(1), value, field)
 
         self.assertTrue((ROOT / expected["psxrecomp_cli_relpath"]).is_file())
+        self.assertIn("#if !defined(PSX_HAS_GAME_DISPATCH)", codegen)
+        self.assertIn("gi->needs_setup = 1;", codegen)
+        self.assertIn("gi->prepare_required_before_continue = 1;", codegen)
+
+    @unittest.skipUnless(sys.platform == "win32", "launch.bat requires Windows")
+    def test_root_launcher_skips_nonplayable_build_trees(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "launch.bat").write_bytes((ROOT / "launch.bat").read_bytes())
+
+            def create_build(name: str, *, force_setup: bool, marker: bool):
+                build = root / name
+                build.mkdir()
+                (build / "G_Police_Recompiled.exe").touch()
+                (build / "bios.cfg").touch()
+                enabled = "ON" if force_setup else "OFF"
+                (build / "CMakeCache.txt").write_text(
+                    f"PSXRECOMP_FORCE_SETUP_HOST:BOOL={enabled}\n",
+                    encoding="utf-8",
+                )
+                if marker:
+                    (build / "psx-runtime_generated_sources.txt").touch()
+
+            create_build("build-release", force_setup=False, marker=False)
+            create_build("build-latest", force_setup=True, marker=True)
+            create_build("build-full", force_setup=False, marker=True)
+
+            env = os.environ.copy()
+            env["G_POLICE_LAUNCH_DRY_RUN"] = "1"
+            result = subprocess.run(
+                [env.get("COMSPEC", "cmd.exe"), "/d", "/c", str(root / "launch.bat")],
+                cwd=root,
+                env=env,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                str(root / "build-full" / "G_Police_Recompiled.exe"),
+                result.stdout,
+            )
 
 
 if __name__ == "__main__":

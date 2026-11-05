@@ -71,6 +71,15 @@ def source_contract(root, version):
              capture(wrapper, r'--exe-name\s+(?:"([^"]+)"|\'([^\']+)\'|([^\s\\]+))')]
     if len(set(names)) != 1:
         raise ValueError('executable names differ: ' + repr(names))
+    for label in ('OpenGL (Fallback)', 'Vulkan (Recommended)'):
+        if '"' + label + '"' not in codegen:
+            raise ValueError('missing G-Police renderer label: ' + label)
+    for guard in ('#if !defined(PSX_HAS_GAME_DISPATCH)',
+                  'gi->needs_setup = 1;',
+                  'gi->prepare_required_before_continue = 1;'):
+        if guard not in codegen:
+            raise ValueError('setup host can expose Play without game dispatch: ' +
+                             guard)
     expected_setup = {
         'display_name': 'G-Police',
         'project_root_env': 'G_POLICE_PROJECT_ROOT',
@@ -109,6 +118,29 @@ def source_contract(root, version):
         raise ValueError('G-Police BIOS profile differs: ' + repr(bios_profile))
     if game.get('runtime', {}).get('openbios', True):
         raise ValueError('G-Police setup unexpectedly enables OpenBIOS')
+    video = game.get('video', {})
+    if video.get('renderer') != 'vulkan':
+        raise ValueError('G-Police default renderer must be Vulkan')
+    if video.get('offer_vulkan') is not True:
+        raise ValueError('G-Police launcher must offer Vulkan')
+    if not re.search(
+            r'set\s*\(\s*PSX_ENABLE_VULKAN\s+ON\s+CACHE\s+BOOL[^)]*FORCE\s*\)',
+            cmake, re.S):
+        raise ValueError('G-Police CMake must force-enable the Vulkan backend')
+    internal_resolution_path = (
+        root / 'psxrecomp/mods/builtin/packages'
+        / 'psx.enhancement.internal-resolution/1.0.0/manifest.toml'
+    )
+    internal_resolution = tomllib.loads(
+        internal_resolution_path.read_text(encoding='utf-8-sig'))
+    features = internal_resolution.get('feature', [])
+    options = internal_resolution.get('option', [])
+    if len(features) != 1 or features[0].get('default_enabled') is not True:
+        raise ValueError('Internal Resolution must be enabled by default')
+    resolution_option = next(
+        (option for option in options if option.get('id') == 'resolution'), None)
+    if not resolution_option or resolution_option.get('default') != '4x':
+        raise ValueError('Internal Resolution must default to true 4x rendering')
     if b'\r' in (root / 'scripts/package_setup_release.sh').read_bytes() or '--runtime-dir' not in wrapper or 'project-manifest.toml' not in wrapper:
         raise ValueError('wrapper requires LF, runtime mods, and project-manifest.toml')
     manifest = tomllib.loads((root / 'project-manifest.toml').read_text(encoding='utf-8-sig'))
@@ -137,7 +169,10 @@ def source_contract(root, version):
             'setup_build_dir': setup['build_dir_name'],
             'setup_target': setup['cmake_target'],
             'setup_game_dispatch': setup['gen_marker_relpath'],
-            'setup_bios_profile': bios_profile}
+            'setup_bios_profile': bios_profile,
+            'default_renderer': video['renderer'],
+            'vulkan_offered': video['offer_vulkan'],
+            'internal_resolution_default': resolution_option['default']}
     # An explicit source policy binds OpenBIOS identity. Publication still needs R4.
     policy_path = root / '.release/policy.json'
     if policy_path.exists():

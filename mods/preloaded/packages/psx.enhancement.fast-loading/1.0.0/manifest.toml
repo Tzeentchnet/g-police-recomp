@@ -1,0 +1,23 @@
+format_version = 5
+id = "psx.enhancement.fast-loading"
+version = "1.0.0"
+name = "Fast Loading (4x)"
+author = "psxrecomp"
+description = "G-Police-validated 4x host pacing for non-FMV loading windows. Guest CD timing, interrupts, callbacks and frame progression remain authoritative."
+resolver = "declarative"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "SLUS-00544"
+
+[[feature]]
+id = "fast-loading"
+name = "Fast Loading (4x)"
+description = "Enabled by default. Runs verified frontend, campaign and mission loading windows at up to 4x host pace. XA audio and FMVs remain at normal speed."
+group = "Quality of Life"
+default_enabled = true
+quick = true
+
+[[plugin]]
+feature = "fast-loading"
+id = "psx.fast-loading"

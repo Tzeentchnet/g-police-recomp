@@ -1,0 +1,38 @@
+{
+  "$schema": "https://recomp.fyi/schema/v1.json",
+  "game": "G-Police",
+  "system": "PS1",
+  "type": "recomp",
+  "original": [
+    {
+      "region": "USA",
+      "serial": "SLUS-00544",
+      "sha1": "2161d2860914b21d2bee457b3eda9d8e816d04a2"
+    },
+    {
+      "region": "USA",
+      "serial": "SLUS-00556",
+      "sha1": "7f6ba87da62bbe565ba5603de462e3ed7c68429d"
+    }
+  ],
+  "project": "G-Police Recompiled",
+  "status": "in-progress",
+  "targets": [
+    "Windows"
+  ],
+  "toolchain": "PSXRecomp",
+  "approach": "Static recompilation of PS1 game and BIOS code with PSXRecomp and native Vulkan or OpenGL rendering.",
+  "maintainers": [
+    {
+      "name": "Tzeentchnet",
+      "link": "https://github.com/Tzeentchnet"
+    }
+  ],
+  "links": [
+    {
+      "label": "Feasibility and validation",
+      "url": "https://github.com/Tzeentchnet/g-police-recomp/blob/main/docs/FEASIBILITY.md"
+    }
+  ],
+  "notes": "Both USA discs pass bounded native startup checks; complete interactive playthrough, disc change, save/load, and release-package acceptance remain open."
+}
